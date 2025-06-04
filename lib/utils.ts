@@ -1,6 +1,6 @@
 import type { Distributor } from "./database"
 
-// 从API获取所有经销商数据
+// 从API获取所有船员数据
 export async function fetchAllDistributors(): Promise<Distributor[]> {
   try {
     const response = await fetch("/api/distributors")

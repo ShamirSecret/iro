@@ -108,7 +108,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <aside className="w-60 bg-picwe-darkGray p-5 border-r border-gray-700/50 flex flex-col fixed h-full">
         <Link href="/dashboard" className="flex items-center space-x-2.5 mb-10">
           <Zap className="h-7 w-7 text-picwe-yellow" />
-          <span className="text-2xl font-bold text-white">经销商平台</span>
+          <span className="text-2xl font-bold text-white">航海平台</span>
         </Link>
         <nav className="flex-grow space-y-1.5">
           {navItems.map((item) => (

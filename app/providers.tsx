@@ -36,9 +36,10 @@ interface AuthContextType {
   allDistributorsData: Distributor[]
   getDownlineDetails: (distributorId: string) => Distributor[] // Should return Distributor[]
   refreshData: () => Promise<void>
-  triggerMockReferralPoints: (
-    referredCustomerAddress: string,
-    newWusdBalance: number,
+  addPointsToDistributor: (
+    distributorId: string,
+    points: number,
+    isDirectEarning: boolean
   ) => Promise<{ success: boolean; message: string }>
   adminManualAddPoints: (
     targetDistributorWalletAddress: string,
@@ -421,23 +422,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [allDistributorsData],
   )
 
-  const triggerMockReferralPoints = async (referredCustomerAddress: string, newWusdBalance: number) => {
+  const addPointsToDistributor = async (
+    distributorId: string,
+    points: number,
+    isDirectEarning: boolean
+  ) => {
     setIsLoading(true)
     try {
-      const response = await fetch("/api/mock/trigger-referral-points", {
+      const response = await fetch("/api/distributors/add-points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ referredCustomerAddress, newWusdBalance }),
+        body: JSON.stringify({ distributorId, points, isDirectEarning }),
       })
       const result = await response.json()
       if (response.ok) {
-        await refreshData() // Refresh data to see point changes
+        await refreshData()
         return { success: true, message: result.message }
       }
-      return { success: false, message: result.error || "Failed to trigger points." }
+      return { success: false, message: result.error || "添加积分失败。" }
     } catch (error: any) {
-      console.error("Error triggering mock points:", error)
-      return { success: false, message: error.message || "Client error triggering points." }
+      console.error("Error adding points:", error)
+      return { success: false, message: error.message || "客户端错误，添加积分失败。" }
     } finally {
       setIsLoading(false)
     }
@@ -550,7 +555,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         allDistributorsData,
         getDownlineDetails,
         refreshData,
-        triggerMockReferralPoints,
+        addPointsToDistributor,
         adminManualAddPoints,
         addAdmin,
         updateAdmin,

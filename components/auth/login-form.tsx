@@ -26,6 +26,17 @@ export default function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const [metamaskDetected, setMetamaskDetected] = useState<boolean | null>(null)
 
+  // 强制只使用 MetaMask 提供者
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window.ethereum as any)?.providers) {
+      const providers = (window.ethereum as any).providers as any[];
+      const metamask = providers.find((p: any) => p.isMetaMask);
+      if (metamask) {
+        window.ethereum = metamask;
+      }
+    }
+  }, [])
+
   // 检查是否安装了 MetaMask
   const checkIfMetaMaskInstalled = () => {
     const isInstalled = typeof window !== "undefined" && typeof window.ethereum !== "undefined"
@@ -189,48 +200,6 @@ export default function LoginForm() {
     }
   }
 
-  // 模拟登录（开发环境使用）
-  const handleMockLogin = async () => {
-    try {
-      setIsConnecting(true)
-      setError(null)
-
-      // 提示用户输入钱包地址
-      const mockAddress = prompt("请输入模拟钱包地址 (0x开头的42位地址):")
-
-      if (!mockAddress) {
-        return // 用户取消了输入
-      }
-
-      if (!mockAddress.startsWith("0x") || mockAddress.length !== 42) {
-        setError("无效的钱包地址格式")
-        return
-      }
-
-      // 获取nonce
-      const nonceResponse = await fetch("/api/auth/nonce")
-      if (!nonceResponse.ok) {
-        throw new Error("获取nonce失败")
-      }
-      const { nonce } = await nonceResponse.json()
-
-      // 模拟签名 (实际项目中不应这样做，这里仅用于开发测试)
-      const mockSignature = "0x" + "1".repeat(130)
-
-      // 调用登录API
-      const loginResult = await loginWithWallet(mockAddress, nonce, mockSignature)
-
-      if (!loginResult.success) {
-        throw new Error(loginResult.message)
-      }
-    } catch (error: any) {
-      console.error("模拟登录错误:", error)
-      setError(error.message || "模拟登录失败")
-    } finally {
-      setIsConnecting(false)
-    }
-  }
-
   const displayAddress = address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : "未连接"
   const isLoading = isConnecting || isSigning || authLoading
 
@@ -245,7 +214,7 @@ export default function LoginForm() {
         </Link>
 
         <h1 className="text-4xl font-extrabold text-white mb-4">进入您的专属领域</h1>
-        <p className="text-lg text-picwe-lightGrayText mb-10">连接您的 MetaMask 钱包，开启经销商之旅。</p>
+        <p className="text-lg text-picwe-lightGrayText mb-10">连接您的 MetaMask 钱包，开启航海之旅。</p>
 
         <div className="w-full space-y-6">
           {isLoading ? (
@@ -291,15 +260,6 @@ export default function LoginForm() {
                 <Wallet className="mr-3 h-6 w-6" />
                 连接 MetaMask 钱包
               </Button>
-
-              {/* 开发环境下的模拟登录按钮 */}
-              <Button
-                onClick={handleMockLogin}
-                variant="outline"
-                className="w-full border-gray-600 text-gray-400 hover:bg-gray-800 text-sm py-2 rounded-lg mt-2"
-              >
-                模拟登录 (开发测试用)
-              </Button>
             </>
           )}
 
@@ -314,7 +274,7 @@ export default function LoginForm() {
           {metamaskDetected === false && (
             <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4 mt-4">
               <p className="text-yellow-400 text-sm">
-                未检测到MetaMask钱包。请安装MetaMask后再试，或使用模拟登录功能进行测试。
+                未检测到MetaMask钱包。请安装MetaMask后再试。
               </p>
               <a
                 href="https://metamask.io/download/"

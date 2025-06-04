@@ -2,7 +2,8 @@
 
 import type React from "react"
 
-import { useAuth, type Distributor } from "@/app/providers"
+import { useAuth } from "@/app/providers"
+import type { Distributor } from "@/lib/database"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -40,7 +41,7 @@ const StatusBadge = ({ status }: { status: Distributor["status"] }) => {
   }
 }
 
-const RoleTypeBadge = ({ roleType }: { roleType: Distributor["role_type"] }) => {
+const RoleTypeBadge = ({ roleType }: { roleType: Distributor["roleType"] }) => {
   switch (roleType) {
     case "captain":
       return (
@@ -85,7 +86,7 @@ export default function AdminRegistrationsPage() {
   const { allDistributorsData, approveDistributor, rejectDistributor, adminRegisterOrPromoteCaptain, isLoading } =
     useAuth()
   const [filterStatus, setFilterStatus] = useState<Distributor["status"] | "all">("all")
-  const [filterRoleType, setFilterRoleType] = useState<Distributor["role_type"] | "all">("all")
+  const [filterRoleType, setFilterRoleType] = useState<Distributor["roleType"] | "all">("all")
 
   // State for the "Add/Promote Captain" form
   const [captainForm, setCaptainForm] = useState({
@@ -98,20 +99,20 @@ export default function AdminRegistrationsPage() {
 
   const handleApprove = async (id: string) => {
     if (!id) {
-      toast.error("无效的经销商ID")
+      toast.error("无效的船员ID")
       return
     }
     await approveDistributor(id)
-    toast.success("经销商已批准。")
+    toast.success("船员已批准。")
   }
 
   const handleReject = async (id: string) => {
     if (!id) {
-      toast.error("无效的经销商ID")
+      toast.error("无效的船员ID")
       return
     }
     await rejectDistributor(id)
-    toast.success("经销商已拒绝。")
+    toast.success("船员已拒绝。")
   }
 
   const handleCaptainFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,26 +142,26 @@ export default function AdminRegistrationsPage() {
 
   const startPromoteToCaptain = (distributor: Distributor) => {
     if (!distributor || !distributor.id) {
-      toast.error("无效的经销商数据")
+      toast.error("无效的船员数据")
       return
     }
     setCaptainForm({
       id: distributor.id,
       name: distributor.name || "",
       email: distributor.email || "",
-      walletAddress: distributor.wallet_address || "",
+      walletAddress: distributor.walletAddress || "",
     })
     setIsEditingCaptain(true)
     // Scroll to form or open modal might be good UX here
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  // 安全过滤经销商数据
+  // 安全过滤船员数据
   const filteredDistributors = (allDistributorsData || [])
-    .filter((d) => d && d.role === "distributor") // 确保数据存在且是经销商
+    .filter((d) => d && d.role === "distributor") // 确保数据存在且是船员（分销角色）
     .filter((d) => filterStatus === "all" || d.status === filterStatus)
-    .filter((d) => filterRoleType === "all" || d.role_type === filterRoleType)
-    .sort((a, b) => (b.registration_timestamp || 0) - (a.registration_timestamp || 0))
+    .filter((d) => filterRoleType === "all" || d.roleType === filterRoleType)
+    .sort((a, b) => (b.registrationTimestamp || 0) - (a.registrationTimestamp || 0))
 
   return (
     <div className="space-y-6">
@@ -251,11 +252,11 @@ export default function AdminRegistrationsPage() {
       </Card>
 
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-        <h1 className="text-xl font-semibold text-white">经销商列表</h1>
+        <h1 className="text-xl font-semibold text-white">船员列表</h1>
         <div className="flex gap-3 flex-wrap">
           <Select
             value={filterRoleType}
-            onValueChange={(value: Distributor["role_type"] | "all") => setFilterRoleType(value)}
+            onValueChange={(value: Distributor["roleType"] | "all") => setFilterRoleType(value)}
           >
             <SelectTrigger className="w-full md:w-[160px] bg-picwe-darkGray border-gray-700 text-picwe-lightGrayText text-xs rounded-md focus:ring-picwe-yellow h-9">
               <SelectValue placeholder="筛选类型" />
@@ -298,7 +299,7 @@ export default function AdminRegistrationsPage() {
         <CardHeader className="p-5 border-b border-gray-700/50">
           <CardTitle className="text-md font-semibold text-white flex items-center">
             <Users className="mr-2.5 h-5 w-5 text-picwe-yellow" />
-            经销商列表 ({filteredDistributors.length})
+            船员列表 ({filteredDistributors.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -329,8 +330,8 @@ export default function AdminRegistrationsPage() {
               <TableBody className="divide-y divide-gray-700/50">
                 {filteredDistributors.map((distributor) => {
                   // 安全获取上级信息
-                  const upline = distributor.upline_distributor_id
-                    ? allDistributorsData.find((d) => d && d.id === distributor.upline_distributor_id)
+                  const upline = distributor.uplineDistributorId
+                    ? allDistributorsData.find((d) => d && d.id === distributor.uplineDistributorId)
                     : null
 
                   return (
@@ -339,13 +340,13 @@ export default function AdminRegistrationsPage() {
                         {distributor.name || "未知用户"}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm whitespace-nowrap">
-                        <RoleTypeBadge roleType={distributor.role_type} />
+                        <RoleTypeBadge roleType={distributor.roleType} />
                       </TableCell>
                       <TableCell
                         className="px-5 py-3 text-xs text-picwe-lightGrayText font-mono whitespace-nowrap"
-                        title={distributor.wallet_address || "无钱包地址"}
+                        title={distributor.walletAddress || "无钱包地址"}
                       >
-                        {formatWalletAddress(distributor.wallet_address)}
+                        {formatWalletAddress(distributor.walletAddress)}
                       </TableCell>
                       <TableCell
                         className="px-5 py-3 text-sm text-picwe-lightGrayText whitespace-nowrap"
@@ -381,7 +382,7 @@ export default function AdminRegistrationsPage() {
                             </Button>
                           </>
                         )}
-                        {distributor.role_type === "crew" && distributor.status === "approved" && (
+                        {distributor.roleType === "crew" && distributor.status === "approved" && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -393,7 +394,7 @@ export default function AdminRegistrationsPage() {
                             <Anchor className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        {distributor.role_type === "captain" && distributor.status === "approved" && (
+                        {distributor.roleType === "captain" && distributor.status === "approved" && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -414,7 +415,7 @@ export default function AdminRegistrationsPage() {
           ) : (
             <div className="text-center py-12">
               <Users className="h-10 w-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-picwe-lightGrayText">暂无符合条件的经销商。</p>
+              <p className="text-picwe-lightGrayText">暂无符合条件的船员。</p>
             </div>
           )}
         </CardContent>

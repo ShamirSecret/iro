@@ -29,7 +29,7 @@ export default function RankingPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-picwe-yellow">经销商排行榜</h1>
+      <h1 className="text-3xl font-bold text-picwe-yellow">船员排行榜</h1>
       <Card className="bg-picwe-darkGray rounded-xl shadow-xl border-gray-700/50">
         <CardHeader className="p-5 border-b border-gray-700/50">
           <CardTitle className="text-lg font-semibold text-white flex items-center">
@@ -37,7 +37,7 @@ export default function RankingPage() {
             排行榜
           </CardTitle>
           <CardDescription className="text-sm text-picwe-lightGrayText mt-1">
-            根据总积分对经销商进行排名。
+            根据总积分对船员进行排名。
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -49,7 +49,7 @@ export default function RankingPage() {
                     排名
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    经销商名称
+                    船员名称
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-right">
                     总积分
@@ -79,7 +79,7 @@ export default function RankingPage() {
                       <TableCell
                         className={`px-5 py-3 text-right font-semibold ${currentUser?.id === distributor.id ? "text-picwe-yellow" : "text-white"}`}
                       >
-                        {safeToLocaleString(distributor.total_points)}
+                        {safeToLocaleString(distributor.totalPoints)}
                       </TableCell>
                     </TableRow>
                   )
@@ -89,7 +89,7 @@ export default function RankingPage() {
           ) : (
             <div className="text-center py-12">
               <BarChart3 className="h-10 w-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-picwe-lightGrayText">排行榜上暂无经销商数据。</p>
+              <p className="text-picwe-lightGrayText">排行榜上暂无船员数据。</p>
             </div>
           )}
         </CardContent>

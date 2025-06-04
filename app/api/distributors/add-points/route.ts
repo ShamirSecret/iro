@@ -11,23 +11,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "参数无效" }, { status: 400 })
     }
 
-    // 获取所有经销商数据以便计算佣金链
+    // 获取所有船员数据以便计算佣金链
     const allDistributors = await getAllDistributors()
     const distributor = allDistributors.find((d) => d.id === distributorId)
 
     if (!distributor) {
-      return NextResponse.json({ error: "经销商不存在" }, { status: 404 })
+      return NextResponse.json({ error: "船员不存在" }, { status: 404 })
     }
 
-    // 给直接经销商加分
+    // 给直接船员加分
     if (isDirectEarning) {
-      await addPointsToDistributor(distributorId, points, 0)
+      await addPointsToDistributor(distributorId, points, "personal")
     } else {
-      await addPointsToDistributor(distributorId, 0, points)
+      await addPointsToDistributor(distributorId, points, "commission")
     }
 
     // 计算上级佣金
-    let currentUplineId = distributor.upline_distributor_id
+    let currentUplineId = distributor.uplineDistributorId
     const pointsForCommission = points
 
     while (currentUplineId) {
@@ -37,12 +37,12 @@ export async function POST(request: Request) {
       const commissionAmount = Math.floor(pointsForCommission * UPLINE_COMMISSION_RATE)
 
       if (commissionAmount > 0) {
-        await addPointsToDistributor(currentUplineId, 0, commissionAmount)
+        await addPointsToDistributor(currentUplineId, commissionAmount, "commission")
       } else {
         break
       }
 
-      currentUplineId = uplineMember.upline_distributor_id
+      currentUplineId = uplineMember.uplineDistributorId
     }
 
     return NextResponse.json({ message: "积分添加成功" })

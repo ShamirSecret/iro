@@ -12,61 +12,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "缺少必要的参数：地址、Nonce 或签名。" }, { status: 400 })
     }
 
-    // 模拟登录模式 - 仅用于开发环境
-    const isMockSignature = signature === "0x" + "1".repeat(130)
-    if (isMockSignature) {
-      console.log("使用模拟签名登录:", address)
-
-      // 检查是否是管理员地址
-      const isAdminAddress = address.toLowerCase() === ADMIN_WALLET_ADDRESS.toLowerCase()
-      const distributor = await getDistributorByWallet(address)
-
-      if (isAdminAddress) {
-        if (!distributor || distributor.role !== "admin") {
-          const adminUser = {
-            id: distributor?.id || "admin-" + Date.now(),
-            walletAddress: address,
-            name: "平台管理员",
-            email: distributor?.email || "admin@picwe.com",
-            role: "admin" as const,
-            roleType: "admin" as const,
-            status: "approved" as const,
-            registrationTimestamp: distributor?.registrationTimestamp || Date.now(),
-            registrationDate: (() => {
-              try {
-                return distributor?.registrationDate || new Date().toISOString().split("T")[0]
-              } catch (error) {
-                console.error("Date formatting error in admin user creation:", error)
-                return new Date().toLocaleDateString("zh-CN")
-              }
-            })(),
-            referralCode: distributor?.referralCode || "ADMINXYZ",
-            totalPoints: distributor?.totalPoints || 0,
-            personalPoints: distributor?.personalPoints || 0,
-            commissionPoints: distributor?.commissionPoints || 0,
-            referredUsers: distributor?.referredUsers || [],
-          }
-          return NextResponse.json({
-            message: "管理员登录成功！",
-            distributor: adminUser,
-          })
-        }
-      }
-
-      if (!distributor) {
-        return NextResponse.json({ error: "该钱包地址未注册。请先注册。" }, { status: 404 })
-      }
-
-      if (distributor.status === "rejected") {
-        return NextResponse.json({ error: "您的账户申请已被拒绝。" }, { status: 403 })
-      }
-
-      return NextResponse.json({
-        message: "登录成功！",
-        distributor,
-      })
-    }
-
     // 正常签名验证流程
     if (!signature.startsWith("0x") || signature.length < 130) {
       return NextResponse.json({ error: "签名格式无效。" }, { status: 401 })

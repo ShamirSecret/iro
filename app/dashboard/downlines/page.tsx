@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth, type Distributor } from "@/app/providers"
+import { useAuth } from "@/app/providers"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Users, ArrowDownCircle, TrendingUp, PlusCircle } from "lucide-react"
@@ -22,13 +22,20 @@ export default function DownlinesPage() {
     isLoading: authLoading,
     allDistributorsData,
   } = useAuth()
-  const [downlines, setDownlines] = useState<Distributor[]>([])
+  const [downlines, setDownlines] = useState<any[]>([])
   const [pointInputs, setPointInputs] = useState<Record<string, string>>({}) // For point input fields
 
   const handleAddPoints = (distributorId: string) => {
     const pointsToAdd = Number.parseInt(pointInputs[distributorId] || "0", 10)
     if (pointsToAdd > 0) {
-      addPointsToDistributor(distributorId, pointsToAdd, true) // true for direct earning for this downline
+      // 找到下级的钱包地址
+      const distributor = allDistributorsData.find((d) => d.id === distributorId)
+      if (distributor && distributor.id) {
+        addPointsToDistributor(distributor.id, pointsToAdd, true)
+      } else {
+        alert("未找到该下级的信息，无法加分。")
+        return
+      }
       setPointInputs((prev) => ({ ...prev, [distributorId]: "" })) // Clear input
       // Data will re-render via useEffect listening to allDistributorsData
     } else {
@@ -64,12 +71,12 @@ export default function DownlinesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-white">我的团队</h1>
+      <h1 className="text-2xl font-semibold text-white">我的船队</h1>
       <Card className="bg-picwe-darkGray rounded-xl shadow-xl border-gray-700/50">
         <CardHeader className="p-5 border-b border-gray-700/50">
           <CardTitle className="text-lg font-semibold text-white flex items-center">
             <Users className="mr-2.5 h-5 w-5 text-picwe-yellow" />
-            直接下级经销商 ({downlines.length})
+            直接下级船员 ({downlines.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -95,9 +102,6 @@ export default function DownlinesPage() {
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-center">
                     下级数量
                   </TableHead>
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-center">
-                    模拟加分
-                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-700/50">
@@ -107,7 +111,7 @@ export default function DownlinesPage() {
                   return (
                     <TableRow key={d.id} className="hover:bg-gray-700/30">
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
-                        {d.name || "未知用户"}
+                        {d.name || "未知船员"}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-picwe-lightGrayText whitespace-nowrap">
                         {d.role_type === "captain" ? "船长" : d.role_type === "crew" ? "船员" : "未知"}
@@ -124,26 +128,6 @@ export default function DownlinesPage() {
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap text-center">
                         {(d.downline_distributor_ids && d.downline_distributor_ids.length) || 0}
                       </TableCell>
-                      <TableCell className="px-5 py-3 text-sm whitespace-nowrap">
-                        <div className="flex items-center space-x-1">
-                          <Input
-                            type="number"
-                            placeholder="积分"
-                            value={pointInputs[d.id] || ""}
-                            onChange={(e) => handlePointInputChange(d.id, e.target.value)}
-                            className="bg-picwe-black border-gray-600 text-white placeholder-gray-500 rounded-md py-1 px-2 text-xs w-20 h-7"
-                          />
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleAddPoints(d.id)}
-                            className="h-7 w-7 text-green-400 hover:bg-green-500/20 hover:text-green-300"
-                            title="给该用户增加直接积分"
-                          >
-                            <PlusCircle className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
                     </TableRow>
                   )
                 })}
@@ -152,33 +136,33 @@ export default function DownlinesPage() {
           ) : (
             <div className="text-center py-12">
               <ArrowDownCircle className="h-10 w-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-picwe-lightGrayText">您目前还没有直接下级经销商。</p>
-              <p className="text-xs text-gray-500 mt-1">分享您的邀请码以发展团队！</p>
+              <p className="text-picwe-lightGrayText">您目前还没有直接下级船员。</p>
+              <p className="text-xs text-gray-500 mt-1">分享您的邀请码以发展船队！</p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {currentUser.upline_distributor_id && (
+      {currentUser.uplineDistributorId && (
         <Card className="bg-picwe-darkGray rounded-xl shadow-xl border-gray-700/50 mt-6">
           <CardHeader className="p-5">
             <CardTitle className="text-lg font-semibold text-white flex items-center">
               <TrendingUp className="mr-2.5 h-5 w-5 text-picwe-yellow" />
-              我的上级信息
+              我的上级船长
             </CardTitle>
           </CardHeader>
           <CardContent className="p-5">
             {(() => {
-              const upline = allDistributorsData.find((d) => d && d.id === currentUser.upline_distributor_id)
+              const upline = allDistributorsData.find((d) => d && d.id === currentUser.uplineDistributorId)
               return upline ? (
                 <div className="space-y-1">
                   <p className="text-sm text-picwe-lightGrayText">
                     名称: <span className="text-white font-medium">{upline.name || "未知"}</span>
                   </p>
                   <p className="text-sm text-picwe-lightGrayText">
-                    类型:{" "}
+                    类型: {" "}
                     <span className="text-white font-medium">
-                      {upline.role_type === "captain" ? "船长" : upline.role_type === "crew" ? "船员" : "未知"}
+                      {upline.roleType === "captain" ? "船长" : upline.roleType === "crew" ? "船员" : "未知"}
                     </span>
                   </p>
                   <p className="text-sm text-picwe-lightGrayText">
@@ -186,7 +170,7 @@ export default function DownlinesPage() {
                   </p>
                 </div>
               ) : (
-                <p className="text-picwe-lightGrayText">上级信息未找到。</p>
+                <p className="text-picwe-lightGrayText">上级船长信息未找到。</p>
               )
             })()}
           </CardContent>

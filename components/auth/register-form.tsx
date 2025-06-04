@@ -161,6 +161,17 @@ export default function RegisterForm() {
     }
   }
 
+  // 强制只使用 MetaMask 提供者
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window.ethereum as any)?.providers) {
+      const providers = (window.ethereum as any).providers as any[];
+      const metamask = providers.find((p: any) => p.isMetaMask);
+      if (metamask) {
+        window.ethereum = metamask;
+      }
+    }
+  }, [])
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-picwe-black p-6">
       <div className="z-10 flex flex-col items-center text-center max-w-md w-full">
@@ -187,7 +198,7 @@ export default function RegisterForm() {
         </div>
 
         <h1 className="text-3xl font-bold text-white mb-3">
-          {isCaptainRegistration ? "成为经销商船长" : "成为经销商船员"}
+          {isCaptainRegistration ? "成为船长" : "成为船员"}
         </h1>
         <p className="text-md text-picwe-lightGrayText mb-8">
           {isCaptainRegistration

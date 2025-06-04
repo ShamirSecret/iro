@@ -19,8 +19,8 @@ import { Loader2 } from "lucide-react"
 
 const adminNavItems = [
   { name: "管理概览", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "经销商审核", href: "/admin/dashboard/registrations", icon: UserCheck },
-  { name: "经销商查询", href: "/admin/dashboard/search", icon: Search },
+  { name: "船员审核", href: "/admin/dashboard/registrations", icon: UserCheck },
+  { name: "船员查询", href: "/admin/dashboard/search", icon: Search },
   { name: "管理员管理", href: "/admin/dashboard/admins", icon: Users },
 ]
 

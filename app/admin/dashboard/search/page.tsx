@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, User, Mail, Wallet } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { Distributor } from "@/lib/database"
 
 export default function DistributorSearchPage() {
   const { allDistributorsData } = useAuth()
@@ -25,7 +26,7 @@ export default function DistributorSearchPage() {
     }
 
     const query = searchQuery.toLowerCase().trim()
-    let results
+    let results: Distributor[] = []
 
     switch (searchType) {
       case "name":
@@ -52,10 +53,10 @@ export default function DistributorSearchPage() {
         <CardHeader className="p-5 border-b border-gray-700/50">
           <CardTitle className="text-lg font-semibold text-white flex items-center">
             <Search className="mr-2.5 h-5 w-5 text-picwe-yellow" />
-            经销商查询
+            船员查询
           </CardTitle>
           <CardDescription className="text-sm text-picwe-lightGrayText mt-1">
-            通过名称、邮箱或钱包地址查询经销商信息
+            通过名称、邮箱或钱包地址查询船员信息
           </CardDescription>
         </CardHeader>
         <CardContent className="p-5">
@@ -164,7 +165,7 @@ export default function DistributorSearchPage() {
             ) : (
               <div className="text-center py-12">
                 <Search className="h-10 w-10 text-gray-600 mx-auto mb-3" />
-                <p className="text-picwe-lightGrayText">未找到匹配 "{searchQuery}" 的经销商</p>
+                <p className="text-picwe-lightGrayText">未找到匹配 "{searchQuery}" 的船员</p>
               </div>
             )}
           </CardContent>

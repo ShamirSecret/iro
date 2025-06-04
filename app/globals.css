@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 移除旧的 HSL 颜色变量，因为 tailwind.config.js 现在直接使用 PicWe 颜色 */
+    /* --background: 0 0% 7.1%; ... 等 */
+
+    /* PicWe 颜色变量，供 CSS 直接使用 (如果需要) */
+    --picwe-yellow: #ffd700;
+    --picwe-black: #121212;
+    --picwe-gray: #f0f0f0;
+    --picwe-darkGray: #1e1e1e;
+    --picwe-lightGrayText: #a0a0a0;
+    --picwe-whiteText: #ffffff;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 20%; /* 保持一个通用的 border 颜色 */
+    --input: 0 0% 15%; /* 保持一个通用的 input 背景颜色 */
+    --ring: 45 100% 50%; /* 保持一个通用的 ring 颜色 (基于黄色) */
+
+    --radius: 0.75rem; /* 调整基础圆角 */
+  }
+
+  .dark {
+    /* .dark 模式下的变量，如果需要与 :root 不同，可以在这里覆盖 */
+    /* 例如，如果 .dark 模式下 PicWe 颜色有细微调整 */
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: 45 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-picwe-black text-picwe-whiteText; /* 使用 PicWe 颜色 */
+    font-family: "Inter", sans-serif; /* 确保 Inter 字体被应用 */
+  }
+}
+
+/* 移除之前的 .picwe-* 自定义类 */

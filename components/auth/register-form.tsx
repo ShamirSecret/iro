@@ -15,8 +15,9 @@ declare global {
   interface Window {
     ethereum?: {
       isMetaMask?: boolean
-      isMetaMask?: boolean
       request: (args: { method: string; params?: any[] }) => Promise<any>
+      on: (eventName: string, handler: (...args: any[]) => void) => void
+      removeListener: (eventName: string, handler: (...args: any[]) => void) => void
     }
   }
 }
@@ -83,7 +84,7 @@ export default function RegisterForm() {
         window.ethereum.removeListener("accountsChanged", handleAccountsChanged)
       }
     }
-  }, [walletAddress])
+  }, []) // 移除 walletAddress 依赖，避免无限循环
 
   // 连接 MetaMask 获取地址
   const connectMetaMask = async () => {
@@ -126,6 +127,12 @@ export default function RegisterForm() {
     } finally {
       setIsConnectingWallet(false)
     }
+  }
+
+  // 断开钱包连接
+  const disconnectWallet = () => {
+    setWalletAddress("")
+    setWalletError(null)
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -231,22 +238,33 @@ export default function RegisterForm() {
                 required
                 className="bg-picwe-darkGray border-gray-700 text-white placeholder-gray-500 rounded-lg py-3 focus:ring-picwe-yellow focus:border-picwe-yellow flex-1"
               />
-              <Button
-                type="button"
-                onClick={connectMetaMask}
-                disabled={isConnectingWallet}
-                className="bg-picwe-yellow text-picwe-black hover:bg-yellow-400 rounded-lg px-4 py-3 flex items-center justify-center min-w-[120px]"
-                title="连接 MetaMask 获取地址"
-              >
-                {isConnectingWallet ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Wallet className="h-4 w-4 mr-1" />
-                    <span className="text-sm">连接</span>
-                  </>
-                )}
-              </Button>
+              {walletAddress ? (
+                <Button
+                  type="button"
+                  onClick={disconnectWallet}
+                  className="bg-red-600 text-white hover:bg-red-700 rounded-lg px-4 py-3 flex items-center justify-center min-w-[120px]"
+                  title="断开钱包连接"
+                >
+                  <span className="text-sm">断开</span>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={connectMetaMask}
+                  disabled={isConnectingWallet}
+                  className="bg-picwe-yellow text-picwe-black hover:bg-yellow-400 rounded-lg px-4 py-3 flex items-center justify-center min-w-[120px]"
+                  title="连接 MetaMask 获取地址"
+                >
+                  {isConnectingWallet ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Wallet className="h-4 w-4 mr-1" />
+                      <span className="text-sm">连接</span>
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
             {walletError && <p className="text-red-400 text-xs mt-1">{walletError}</p>}
             {walletAddress && (

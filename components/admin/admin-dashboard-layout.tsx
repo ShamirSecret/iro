@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/app/providers"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, UserCheck, LogOut, ShieldCheck, Search } from "lucide-react"
+import { LayoutDashboard, UserCheck, LogOut, ShieldCheck, Search, Users } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ const adminNavItems = [
   { name: "管理概览", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "经销商审核", href: "/admin/dashboard/registrations", icon: UserCheck },
   { name: "经销商查询", href: "/admin/dashboard/search", icon: Search },
+  { name: "管理员管理", href: "/admin/dashboard/admins", icon: Users },
 ]
 
 export default function AdminDashboardLayout({ children }: { children: ReactNode }) {

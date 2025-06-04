@@ -12,6 +12,8 @@ declare global {
     ethereum?: {
       isMetaMask?: boolean
       request: (args: { method: string; params?: any[] }) => Promise<any>
+      on: (eventName: string, handler: (...args: any[]) => void) => void
+      removeListener: (eventName: string, handler: (...args: any[]) => void) => void
     }
   }
 }
@@ -22,53 +24,56 @@ export default function LoginForm() {
   const [isSigning, setIsSigning] = useState(false)
   const [address, setAddress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [metamaskDetected, setMetamaskDetected] = useState<boolean | null>(null)
 
   // 检查是否安装了 MetaMask
   const checkIfMetaMaskInstalled = () => {
-    return typeof window !== "undefined" && window.ethereum && window.ethereum.isMetaMask
+    const isInstalled = typeof window !== "undefined" && window.ethereum && window.ethereum.isMetaMask
+    setMetamaskDetected(!!isInstalled)
+    return isInstalled
   }
 
   useEffect(() => {
-    if (!checkIfMetaMaskInstalled() || !window.ethereum) {
-      return
-    }
+    // 初始检查MetaMask是否安装
+    checkIfMetaMaskInstalled()
+
+    // 如果没有MetaMask，不需要继续
+    if (metamaskDetected === false) return
 
     const handleAccountsChanged = (accounts: string[]) => {
       console.log("MetaMask accounts changed (login form):", accounts)
       if (accounts.length === 0) {
         setError("MetaMask未连接或已锁定。请在MetaMask中选择一个账户。")
         setAddress(null)
-        // Potentially reset other states if needed, e.g., if a signing process was interrupted
         setIsSigning(false)
       } else {
         const newAddress = accounts[0]
         if (address !== newAddress) {
-          // Only update if the address actually changed
           setAddress(newAddress)
-          setError(null) // Clear previous errors related to connection
-          setIsSigning(false) // Reset signing state as context has changed
+          setError(null)
+          setIsSigning(false)
         }
       }
     }
 
-    // Attempt to get current accounts on mount, in case already connected
-    window.ethereum
-      .request({ method: "eth_accounts" })
-      .then(handleAccountsChanged)
-      .catch((err) => console.error("Error fetching initial accounts:", err))
+    // 尝试获取当前账户
+    if (window.ethereum && metamaskDetected !== false) {
+      window.ethereum
+        .request({ method: "eth_accounts" })
+        .then(handleAccountsChanged)
+        .catch((err) => console.error("Error fetching initial accounts:", err))
 
-    window.ethereum.on("accountsChanged", handleAccountsChanged)
+      // 添加账户变更监听器
+      window.ethereum.on("accountsChanged", handleAccountsChanged)
 
-    return () => {
-      if (window.ethereum?.removeListener) {
-        window.ethereum.removeListener("accountsChanged", handleAccountsChanged)
+      // 清理函数
+      return () => {
+        if (window.ethereum?.removeListener) {
+          window.ethereum.removeListener("accountsChanged", handleAccountsChanged)
+        }
       }
     }
-    // Add dependencies that, if changed, should re-run the effect.
-    // For account changes, typically only on mount/unmount.
-    // If setAddress or setError cause re-renders that re-run this, ensure they are stable or add to deps.
-    // For now, empty array is fine for this event listener setup.
-  }, [])
+  }, [metamaskDetected]) // 移除 address 依赖，避免无限循环
 
   // 连接 MetaMask
   const connectWallet = async () => {
@@ -112,6 +117,7 @@ export default function LoginForm() {
       }
 
       setError(errorMessage)
+      setAddress(null) // 连接失败时清除地址
     } finally {
       setIsConnecting(false)
     }
@@ -165,7 +171,7 @@ export default function LoginForm() {
       }
 
       setError(errorMessage)
-      setAddress(null) // 清除地址，允许重试
+      setAddress(null) // 签名失败时清除地址，允许重试
     } finally {
       setIsSigning(false)
     }
@@ -173,8 +179,59 @@ export default function LoginForm() {
 
   // 断开连接
   const disconnectWallet = () => {
+    console.log("断开钱包连接")
     setAddress(null)
     setError(null)
+    setIsSigning(false)
+    setIsConnecting(false)
+
+    // 清除任何可能的缓存状态
+    if (typeof window !== "undefined") {
+      // 不清除 localStorage 中的登录状态，只清除当前连接状态
+      console.log("钱包连接已断开")
+    }
+  }
+
+  // 模拟登录（开发环境使用）
+  const handleMockLogin = async () => {
+    try {
+      setIsConnecting(true)
+      setError(null)
+
+      // 提示用户输入钱包地址
+      const mockAddress = prompt("请输入模拟钱包地址 (0x开头的42位地址):")
+
+      if (!mockAddress) {
+        return // 用户取消了输入
+      }
+
+      if (!mockAddress.startsWith("0x") || mockAddress.length !== 42) {
+        setError("无效的钱包地址格式")
+        return
+      }
+
+      // 获取nonce
+      const nonceResponse = await fetch("/api/auth/nonce")
+      if (!nonceResponse.ok) {
+        throw new Error("获取nonce失败")
+      }
+      const { nonce } = await nonceResponse.json()
+
+      // 模拟签名 (实际项目中不应这样做，这里仅用于开发测试)
+      const mockSignature = "0x" + "1".repeat(130)
+
+      // 调用登录API
+      const loginResult = await loginWithWallet(mockAddress, nonce, mockSignature)
+
+      if (!loginResult.success) {
+        throw new Error(loginResult.message)
+      }
+    } catch (error: any) {
+      console.error("模拟登录错误:", error)
+      setError(error.message || "模拟登录失败")
+    } finally {
+      setIsConnecting(false)
+    }
   }
 
   const displayAddress = address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : "未连接"
@@ -210,22 +267,43 @@ export default function LoginForm() {
                 <p className="text-picwe-lightGrayText text-sm mb-2">已连接钱包:</p>
                 <p className="font-mono text-white text-lg">{displayAddress}</p>
               </div>
-              <Button
-                variant="outline"
-                onClick={disconnectWallet}
-                className="w-full border-picwe-yellow text-picwe-yellow hover:bg-picwe-yellow hover:text-picwe-black text-lg font-semibold py-4 rounded-xl transition-all duration-300 ease-in-out"
-              >
-                断开连接
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  onClick={() => handleSignMessage(address)}
+                  className="w-full bg-picwe-yellow text-picwe-black text-lg font-semibold py-4 rounded-xl hover:bg-yellow-400 transition-all duration-300 ease-in-out"
+                  disabled={isLoading}
+                >
+                  重新签名登录
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={disconnectWallet}
+                  className="w-full border-picwe-yellow text-picwe-yellow hover:bg-picwe-yellow hover:text-picwe-black text-lg font-semibold py-4 rounded-xl transition-all duration-300 ease-in-out"
+                >
+                  断开连接
+                </Button>
+              </div>
             </>
           ) : (
-            <Button
-              onClick={connectWallet}
-              className="w-full bg-picwe-yellow text-picwe-black text-lg font-semibold py-4 rounded-xl hover:bg-yellow-400 focus:ring-4 focus:ring-yellow-300/50 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg shadow-picwe-yellow/30"
-            >
-              <Wallet className="mr-3 h-6 w-6" />
-              连接 MetaMask 钱包
-            </Button>
+            <>
+              <Button
+                onClick={connectWallet}
+                className="w-full bg-picwe-yellow text-picwe-black text-lg font-semibold py-4 rounded-xl hover:bg-yellow-400 focus:ring-4 focus:ring-yellow-300/50 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg shadow-picwe-yellow/30"
+                disabled={metamaskDetected === false}
+              >
+                <Wallet className="mr-3 h-6 w-6" />
+                连接 MetaMask 钱包
+              </Button>
+
+              {/* 开发环境下的模拟登录按钮 */}
+              <Button
+                onClick={handleMockLogin}
+                variant="outline"
+                className="w-full border-gray-600 text-gray-400 hover:bg-gray-800 text-sm py-2 rounded-lg mt-2"
+              >
+                模拟登录 (开发测试用)
+              </Button>
+            </>
           )}
 
           {error && (
@@ -233,6 +311,22 @@ export default function LoginForm() {
               <p className="text-red-400 text-sm" aria-live="polite">
                 {error}
               </p>
+            </div>
+          )}
+
+          {metamaskDetected === false && (
+            <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4 mt-4">
+              <p className="text-yellow-400 text-sm">
+                未检测到MetaMask钱包。请安装MetaMask后再试，或使用模拟登录功能进行测试。
+              </p>
+              <a
+                href="https://metamask.io/download/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-picwe-yellow hover:underline text-sm mt-2 inline-block"
+              >
+                下载MetaMask
+              </a>
             </div>
           )}
         </div>

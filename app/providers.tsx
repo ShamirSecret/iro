@@ -45,6 +45,15 @@ interface AuthContextType {
     points: number,
     pointType: "personal" | "commission",
   ) => Promise<{ success: boolean; message: string }>
+  // 新增管理员管理功能
+  addAdmin: (name: string, email: string, walletAddress: string) => Promise<{ success: boolean; message: string }>
+  updateAdmin: (
+    id: string,
+    name: string,
+    email: string,
+    walletAddress: string,
+  ) => Promise<{ success: boolean; message: string }>
+  deleteAdmin: (id: string) => Promise<{ success: boolean; message: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -453,6 +462,71 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  // 新增管理员管理功能
+  const addAdmin = async (name: string, email: string, walletAddress: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/admin/admins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, walletAddress }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message }
+      }
+      return { success: false, message: result.error }
+    } catch (error) {
+      console.error("Error adding admin:", error)
+      return { success: false, message: "添加管理员失败" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const updateAdmin = async (id: string, name: string, email: string, walletAddress: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/admin/admins/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, walletAddress }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message }
+      }
+      return { success: false, message: result.error }
+    } catch (error) {
+      console.error("Error updating admin:", error)
+      return { success: false, message: "更新管理员失败" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const deleteAdmin = async (id: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/admin/admins/${id}`, {
+        method: "DELETE",
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message }
+      }
+      return { success: false, message: result.error }
+    } catch (error) {
+      console.error("Error deleting admin:", error)
+      return { success: false, message: "删除管理员失败" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -471,6 +545,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         refreshData,
         triggerMockReferralPoints,
         adminManualAddPoints,
+        addAdmin,
+        updateAdmin,
+        deleteAdmin,
       }}
     >
       {children}

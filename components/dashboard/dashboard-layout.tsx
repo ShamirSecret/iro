@@ -43,8 +43,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     )
   }
 
-  // 修复：使用 status 而不是 isApproved
-  if (currentUser.status !== "approved") {
+  // 检查是否是管理员 - 如果是管理员，重定向到管理员页面
+  if (currentUser.role === "admin") {
+    router.push("/admin/dashboard")
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-picwe-black">
+        <Loader2 className="h-10 w-10 animate-spin text-picwe-yellow" />
+        <span className="ml-3 text-white">正在跳转到管理员页面...</span>
+      </div>
+    )
+  }
+
+  // 修复：使用 status 而不是 isApproved，并且排除管理员
+  if (currentUser.role !== "admin" && currentUser.status !== "approved") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-picwe-black text-center p-6">
         <ShieldAlert className="h-12 w-12 text-picwe-yellow mb-5" />
@@ -61,6 +72,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </p>
           <p>
             用户类型: <span className="text-picwe-yellow">{currentUser.roleType === "captain" ? "船长" : "船员"}</span>
+          </p>
+          <p>
+            用户角色: <span className="text-picwe-yellow">{currentUser.role}</span>
           </p>
         </div>
         <Button

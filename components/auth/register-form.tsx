@@ -7,14 +7,27 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/app/providers"
 import Link from "next/link"
-import { Loader2, UserPlus, Zap, Anchor, Users } from "lucide-react"
+import { Loader2, UserPlus, Zap, Anchor, Users, Wallet } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
+
+// 声明 window.ethereum 类型
+declare global {
+  interface Window {
+    ethereum?: {
+      isMetaMask?: boolean
+      isMetaMask?: boolean
+      request: (args: { method: string; params?: any[] }) => Promise<any>
+    }
+  }
+}
 
 export default function RegisterForm() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [walletAddress, setWalletAddress] = useState("")
   const [uplineReferralCode, setUplineReferralCode] = useState("")
+  const [isConnectingWallet, setIsConnectingWallet] = useState(false)
+  const [walletError, setWalletError] = useState<string | null>(null)
   const { registerCrew, registerCaptain, isLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -31,6 +44,89 @@ export default function RegisterForm() {
   // 判断注册类型
   const isCaptainRegistration = !uplineReferralCode.trim()
   const isCrewRegistration = uplineReferralCode.trim().length > 0
+
+  // 检查是否安装了 MetaMask
+  const checkIfMetaMaskInstalled = () => {
+    return typeof window !== "undefined" && window.ethereum && window.ethereum.isMetaMask
+  }
+
+  useEffect(() => {
+    if (!checkIfMetaMaskInstalled() || !window.ethereum) {
+      return
+    }
+
+    const handleAccountsChanged = (accounts: string[]) => {
+      console.log("MetaMask accounts changed (register form):", accounts)
+      if (accounts.length === 0) {
+        setWalletError("MetaMask未连接或已锁定。请在MetaMask中选择一个账户。")
+        setWalletAddress("")
+      } else {
+        const newAddress = accounts[0]
+        if (walletAddress !== newAddress) {
+          // Only update if the address actually changed
+          setWalletAddress(newAddress)
+          setWalletError(null)
+        }
+      }
+    }
+
+    // Attempt to get current accounts on mount
+    window.ethereum
+      .request({ method: "eth_accounts" })
+      .then(handleAccountsChanged)
+      .catch((err) => console.error("Error fetching initial accounts (register):", err))
+
+    window.ethereum.on("accountsChanged", handleAccountsChanged)
+
+    return () => {
+      if (window.ethereum?.removeListener) {
+        window.ethereum.removeListener("accountsChanged", handleAccountsChanged)
+      }
+    }
+  }, [walletAddress])
+
+  // 连接 MetaMask 获取地址
+  const connectMetaMask = async () => {
+    setWalletError(null)
+    setIsConnectingWallet(true)
+
+    try {
+      if (!checkIfMetaMaskInstalled()) {
+        throw new Error("请安装 MetaMask 钱包。您可以从 https://metamask.io 下载。")
+      }
+
+      if (!window.ethereum) {
+        throw new Error("未检测到 MetaMask，请确保已安装并启用。")
+      }
+
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      })
+
+      if (!accounts || accounts.length === 0) {
+        throw new Error("未能获取钱包地址，请确保 MetaMask 已解锁并授权连接。")
+      }
+
+      const address = accounts[0]
+      setWalletAddress(address)
+      setWalletError(null)
+    } catch (error: any) {
+      console.error("连接 MetaMask 错误:", error)
+      let errorMessage = "连接钱包失败，请重试。"
+
+      if (error.code === 4001) {
+        errorMessage = "用户拒绝了连接请求。"
+      } else if (error.code === -32002) {
+        errorMessage = "MetaMask 连接请求已在处理中，请检查 MetaMask 弹窗。"
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
+      setWalletError(errorMessage)
+    } finally {
+      setIsConnectingWallet(false)
+    }
+  }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -106,6 +202,7 @@ export default function RegisterForm() {
               placeholder="请输入您的姓名"
             />
           </div>
+
           <div className="space-y-1.5 text-left">
             <Label htmlFor="email" className="text-sm font-medium text-picwe-lightGrayText">
               邮箱地址
@@ -120,19 +217,45 @@ export default function RegisterForm() {
               placeholder="请输入您的邮箱"
             />
           </div>
+
           <div className="space-y-1.5 text-left">
             <Label htmlFor="walletAddress" className="text-sm font-medium text-picwe-lightGrayText">
               钱包地址 (用于接收奖励)
             </Label>
-            <Input
-              id="walletAddress"
-              value={walletAddress}
-              onChange={(e) => setWalletAddress(e.target.value)}
-              placeholder="0x..."
-              required
-              className="bg-picwe-darkGray border-gray-700 text-white placeholder-gray-500 rounded-lg py-3 focus:ring-picwe-yellow focus:border-picwe-yellow"
-            />
+            <div className="flex space-x-2">
+              <Input
+                id="walletAddress"
+                value={walletAddress}
+                onChange={(e) => setWalletAddress(e.target.value)}
+                placeholder="0x... 或点击右侧按钮连接 MetaMask"
+                required
+                className="bg-picwe-darkGray border-gray-700 text-white placeholder-gray-500 rounded-lg py-3 focus:ring-picwe-yellow focus:border-picwe-yellow flex-1"
+              />
+              <Button
+                type="button"
+                onClick={connectMetaMask}
+                disabled={isConnectingWallet}
+                className="bg-picwe-yellow text-picwe-black hover:bg-yellow-400 rounded-lg px-4 py-3 flex items-center justify-center min-w-[120px]"
+                title="连接 MetaMask 获取地址"
+              >
+                {isConnectingWallet ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Wallet className="h-4 w-4 mr-1" />
+                    <span className="text-sm">连接</span>
+                  </>
+                )}
+              </Button>
+            </div>
+            {walletError && <p className="text-red-400 text-xs mt-1">{walletError}</p>}
+            {walletAddress && (
+              <p className="text-green-400 text-xs mt-1">
+                ✓ 已获取钱包地址: {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
+              </p>
+            )}
           </div>
+
           <div className="space-y-1.5 text-left">
             <Label htmlFor="uplineReferralCode" className="text-sm font-medium text-picwe-lightGrayText">
               邀请码 {isCaptainRegistration && <span className="text-gray-500">(可选，不填则注册船长)</span>}
@@ -148,9 +271,15 @@ export default function RegisterForm() {
           </div>
 
           {message && (
-            <p className={`text-sm pt-1 ${message.type === "success" ? "text-green-400" : "text-red-400"}`}>
-              {message.text}
-            </p>
+            <div
+              className={`p-3 rounded-lg border ${
+                message.type === "success"
+                  ? "bg-green-900/20 border-green-500/50 text-green-400"
+                  : "bg-red-900/20 border-red-500/50 text-red-400"
+              }`}
+            >
+              <p className="text-sm">{message.text}</p>
+            </div>
           )}
 
           <Button
@@ -175,6 +304,22 @@ export default function RegisterForm() {
             在此登录
           </Link>
         </p>
+
+        <div className="mt-6 text-xs text-picwe-lightGrayText/70 space-y-2">
+          <p>💡 提示：您可以手动输入钱包地址，或点击"连接"按钮从 MetaMask 自动获取</p>
+          <p>
+            如果没有安装 MetaMask，请访问{" "}
+            <a
+              href="https://metamask.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-picwe-yellow hover:underline"
+            >
+              metamask.io
+            </a>{" "}
+            下载
+          </p>
+        </div>
       </div>
     </div>
   )

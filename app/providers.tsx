@@ -1,39 +1,18 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useRouter, usePathname } from "next/navigation"
-
-// Distributor interface remains the same
-export interface Distributor {
-  id: string
-  walletAddress: string
-  name: string
-  email: string
-  role: "distributor" | "admin"
-  roleType: "captain" | "crew" | "admin"
-  status: "pending" | "approved" | "rejected"
-  registrationTimestamp: number
-  registrationDate: string
-  referralCode: string
-  uplineDistributorId?: string
-  downlineDistributorIds: string[]
-  totalPoints: number
-  personalPoints: number
-  commissionPoints: number
-  rank?: number
-  referredUsers: Array<{
-    id: string
-    address: string
-    wusdBalance: number
-    pointsEarned: number
-  }>
-}
+import type { Distributor } from "@/lib/database" // Import camelCase interfaces
 
 interface AuthContextType {
   currentUser: Distributor | null
   isAuthenticated: boolean
-  isLoading: boolean
-  loginWithWallet: () => Promise<void>
+  isLoading: boolean // General loading for auth operations
+  loginWithWallet: (
+    walletAddress: string,
+    nonce: string,
+    signature: string,
+  ) => Promise<{ success: boolean; message: string }>
   logout: () => void
   registerCrew: (
     name: string,
@@ -55,348 +34,249 @@ interface AuthContextType {
     existingId?: string,
   ) => Promise<{ success: boolean; message: string }>
   allDistributorsData: Distributor[]
-  getDownlineDetails: (distributorId: string) => Distributor[]
-  addPointsToDistributor: (distributorId: string, points: number, isDirectEarning: boolean) => Promise<void>
+  getDownlineDetails: (distributorId: string) => Distributor[] // Should return Distributor[]
+  refreshData: () => Promise<void>
+  triggerMockReferralPoints: (
+    referredCustomerAddress: string,
+    newWusdBalance: number,
+  ) => Promise<{ success: boolean; message: string }>
+  adminManualAddPoints: (
+    targetDistributorWalletAddress: string,
+    points: number,
+    pointType: "personal" | "commission",
+  ) => Promise<{ success: boolean; message: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const ADMIN_WALLET_ADDRESS = "0x2574Ef9402f30C9cACE4E0b29FB4160d622Efd"
-const UPLINE_COMMISSION_RATE = 0.1
-
-// Replace the formatDate function with a safer version
-const formatDate = (timestamp: number): string => {
-  try {
-    if (!timestamp || isNaN(timestamp)) {
-      return new Date().toLocaleDateString("zh-CN")
-    }
-    return new Date(timestamp).toLocaleDateString("zh-CN")
-  } catch (error) {
-    console.error("Date formatting error:", error)
-    return new Date().toLocaleDateString("zh-CN")
-  }
-}
-
-// Update the mock data to use proper date formatting
-let MOCK_DISTRIBUTORS_DB: Distributor[] = [
-  {
-    id: "admin0",
-    walletAddress: ADMIN_WALLET_ADDRESS,
-    name: "平台管理员",
-    email: "admin@example.com",
-    role: "admin",
-    roleType: "admin",
-    status: "approved",
-    registrationTimestamp: new Date("2023-01-01T10:00:00Z").getTime(),
-    registrationDate: formatDate(new Date("2023-01-01T10:00:00Z").getTime()),
-    referralCode: "ADMINXYZ",
-    uplineDistributorId: undefined,
-    downlineDistributorIds: [],
-    totalPoints: 0,
-    personalPoints: 0,
-    commissionPoints: 0,
-    referredUsers: [],
-  },
-  {
-    id: "captainAlice",
-    walletAddress: "0xCaptainAliceWallet00000000000000000000",
-    name: "船长Alice",
-    email: "alice@captain.com",
-    role: "distributor",
-    roleType: "captain",
-    status: "approved",
-    registrationTimestamp: new Date("2023-02-01T10:00:00Z").getTime(),
-    registrationDate: formatDate(new Date("2023-02-01T10:00:00Z").getTime()),
-    referralCode: "ALICE001",
-    uplineDistributorId: undefined,
-    downlineDistributorIds: ["crewBob", "crewCharlie"],
-    totalPoints: 50000,
-    personalPoints: 30000,
-    commissionPoints: 20000,
-    referredUsers: [
-      { id: "ref1", address: "0x1234567890123456789012345678901234567890", wusdBalance: 10000, pointsEarned: 1000 },
-      { id: "ref2", address: "0x2345678901234567890123456789012345678901", wusdBalance: 15000, pointsEarned: 1500 },
-    ],
-  },
-  {
-    id: "captainDave",
-    walletAddress: "0xCaptainDaveWallet00000000000000000000",
-    name: "船长Dave",
-    email: "dave@captain.com",
-    role: "distributor",
-    roleType: "captain",
-    status: "approved",
-    registrationTimestamp: new Date("2023-02-15T10:00:00Z").getTime(),
-    registrationDate: formatDate(new Date("2023-02-15T10:00:00Z").getTime()),
-    referralCode: "DAVE002",
-    uplineDistributorId: undefined,
-    downlineDistributorIds: ["crewEve"],
-    totalPoints: 15000,
-    personalPoints: 10000,
-    commissionPoints: 5000,
-    referredUsers: [
-      { id: "ref3", address: "0x3456789012345678901234567890123456789012", wusdBalance: 8000, pointsEarned: 800 },
-    ],
-  },
-  {
-    id: "crewBob",
-    walletAddress: "0xCrewBobWalletAlice00000000000000000000",
-    name: "船员Bob (Alice下级)",
-    email: "bob@crew.com",
-    role: "distributor",
-    roleType: "crew",
-    status: "approved",
-    registrationTimestamp: new Date("2023-03-01T10:00:00Z").getTime(),
-    registrationDate: formatDate(new Date("2023-03-01T10:00:00Z").getTime()),
-    referralCode: "BOB123",
-    uplineDistributorId: "captainAlice",
-    downlineDistributorIds: ["crewFrank"],
-    totalPoints: 11000,
-    personalPoints: 10000,
-    commissionPoints: 1000,
-    referredUsers: [
-      { id: "ref4", address: "0x4567890123456789012345678901234567890123", wusdBalance: 5000, pointsEarned: 500 },
-    ],
-  },
-  {
-    id: "crewCharlie",
-    walletAddress: "0xCrewCharlieWalletAlice000000000000000",
-    name: "船员Charlie (Alice下级)",
-    email: "charlie@crew.com",
-    role: "distributor",
-    roleType: "crew",
-    status: "approved",
-    registrationTimestamp: new Date("2023-03-05T10:00:00Z").getTime(),
-    registrationDate: formatDate(new Date("2023-03-05T10:00:00Z").getTime()),
-    referralCode: "CHARLIE456",
-    uplineDistributorId: "captainAlice",
-    downlineDistributorIds: [],
-    totalPoints: 5000,
-    personalPoints: 5000,
-    commissionPoints: 0,
-    referredUsers: [],
-  },
-  {
-    id: "crewFrank",
-    walletAddress: "0xCrewFrankWalletBob0000000000000000000",
-    name: "船员Frank (Bob下级)",
-    email: "frank@crew.com",
-    role: "distributor",
-    roleType: "crew",
-    status: "approved",
-    registrationTimestamp: new Date("2023-04-01T10:00:00Z").getTime(),
-    registrationDate: formatDate(new Date("2023-04-01T10:00:00Z").getTime()),
-    referralCode: "FRANK789",
-    uplineDistributorId: "crewBob",
-    downlineDistributorIds: [],
-    totalPoints: 1000,
-    personalPoints: 1000,
-    commissionPoints: 0,
-    referredUsers: [],
-  },
-  {
-    id: "crewEve",
-    walletAddress: "0xCrewEveWalletDave00000000000000000000",
-    name: "船员Eve (Dave下级)",
-    email: "eve@crew.com",
-    role: "distributor",
-    roleType: "crew",
-    status: "approved",
-    registrationTimestamp: new Date("2023-03-10T10:00:00Z").getTime(),
-    registrationDate: formatDate(new Date("2023-03-10T10:00:00Z").getTime()),
-    referralCode: "EVE000",
-    uplineDistributorId: "captainDave",
-    downlineDistributorIds: [],
-    totalPoints: 5000,
-    personalPoints: 5000,
-    commissionPoints: 0,
-    referredUsers: [],
-  },
-  {
-    id: "captainPending",
-    walletAddress: "0xCaptainPendingWallet000000000000000000",
-    name: "待审核船长Grace",
-    email: "grace@pending.com",
-    role: "distributor",
-    roleType: "captain",
-    status: "pending",
-    registrationTimestamp: new Date("2023-05-01T10:00:00Z").getTime(),
-    registrationDate: formatDate(new Date("2023-05-01T10:00:00Z").getTime()),
-    referralCode: "GRACEPEND",
-    uplineDistributorId: undefined,
-    downlineDistributorIds: [],
-    totalPoints: 0,
-    personalPoints: 0,
-    commissionPoints: 0,
-    referredUsers: [],
-  },
-  {
-    id: "captainRejected",
-    walletAddress: "0xCaptainRejectedWallet00000000000000000",
-    name: "已拒绝船长Hank",
-    email: "hank@rejected.com",
-    role: "distributor",
-    roleType: "captain",
-    status: "rejected",
-    registrationTimestamp: new Date("2023-05-02T10:00:00Z").getTime(),
-    registrationDate: formatDate(new Date("2023-05-02T10:00:00Z").getTime()),
-    referralCode: "HANKREJ",
-    uplineDistributorId: undefined,
-    downlineDistributorIds: [],
-    totalPoints: 0,
-    personalPoints: 0,
-    commissionPoints: 0,
-    referredUsers: [],
-  },
-]
+const ADMIN_WALLET_ADDRESS = "0x442368f7b5192f9164a11a5387194cb5718673b9" // 更新的管理员地址
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<Distributor | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true) // For initial load and major auth ops
   const [allDistributorsData, setAllDistributorsData] = useState<Distributor[]>([])
   const router = useRouter()
   const pathname = usePathname()
 
-  const updateStateAfterDbChange = useCallback(
-    (newDbSnapshot: Distributor[], activeUserContext: Distributor | null) => {
-      const distributorsForRanking = newDbSnapshot.filter((d) => d.role === "distributor" && d.status === "approved")
-      const sortedDistributors = [...distributorsForRanking].sort((a, b) => b.totalPoints - a.totalPoints)
-      const rankedDistributors = sortedDistributors.map((d, index) => ({ ...d, rank: index + 1 }))
+  const fetchAllDistributors = useCallback(async (): Promise<Distributor[]> => {
+    try {
+      const response = await fetch("/api/distributors")
+      if (!response.ok) throw new Error("Failed to fetch distributors")
+      const data: Distributor[] = await response.json() // Expecting camelCase data
 
-      const newAllData = newDbSnapshot.map((d) => {
-        const rankedVersion = rankedDistributors.find((rd) => rd.id === d.id)
-        return rankedVersion || d
-      })
-      setAllDistributorsData(newAllData)
+      if (!Array.isArray(data)) {
+        console.error("Invalid data format received for all distributors:", data)
+        return []
+      }
 
-      if (activeUserContext) {
-        const updatedActiveUserData = newAllData.find((d) => d.id === activeUserContext.id)
-        if (updatedActiveUserData) {
-          setCurrentUser((currentInternalUser) => {
-            if (JSON.stringify(updatedActiveUserData) !== JSON.stringify(currentInternalUser)) {
-              return updatedActiveUserData
-            }
-            return currentInternalUser
-          })
-          if (updatedActiveUserData.status !== "approved" && updatedActiveUserData.status !== "pending") {
-            setIsAuthenticated(false)
-            if (
-              typeof window !== "undefined" &&
-              localStorage.getItem("currentUserAddress") === updatedActiveUserData.walletAddress
-            ) {
+      // Calculate ranks
+      const distributorsForRanking = data.filter((d) => d.role === "distributor" && d.status === "approved")
+      const sortedDistributors = [...distributorsForRanking].sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
+      const rankedDistributorsMap = new Map(sortedDistributors.map((d, index) => [d.id, index + 1]))
+
+      const allDataWithRanks = data.map((d) => ({
+        ...d,
+        rank: rankedDistributorsMap.get(d.id) || undefined,
+      }))
+
+      setAllDistributorsData(allDataWithRanks)
+      return allDataWithRanks
+    } catch (error) {
+      console.error("Error fetching distributors:", error)
+      setAllDistributorsData([])
+      return []
+    }
+  }, [])
+
+  const refreshData = useCallback(async () => {
+    setIsLoading(true) // Indicate loading during refresh
+    await fetchAllDistributors()
+    // If a user is logged in, refresh their specific data too
+    if (currentUser && currentUser.walletAddress) {
+      try {
+        const response = await fetch(`/api/distributors/wallet/${currentUser.walletAddress}`)
+        if (response.ok) {
+          const userData: Distributor = await response.json() // Expecting camelCase
+          if (
+            userData &&
+            (userData.status === "approved" || userData.status === "pending" || userData.role === "admin")
+          ) {
+            // Update rank for current user based on refreshed allDistributorsData
+            const refreshedUserRank = allDistributorsData.find((d) => d.id === userData.id)?.rank
+            setCurrentUser({ ...userData, rank: refreshedUserRank })
+          } else {
+            // User status might have changed
+            logout() // Log out if status is no longer valid
+          }
+        } else {
+          // 如果是管理员地址，即使数据库中没有记录也不要登出
+          const isAdminAddress = currentUser.walletAddress.toLowerCase() === ADMIN_WALLET_ADDRESS.toLowerCase()
+          if (!isAdminAddress) {
+            logout() // Log out if user data fetch fails
+          }
+        }
+      } catch (error) {
+        console.error("Error refreshing current user data:", error)
+        // 如果是管理员地址，即使出错也不要登出
+        const isAdminAddress = currentUser.walletAddress.toLowerCase() === ADMIN_WALLET_ADDRESS.toLowerCase()
+        if (!isAdminAddress) {
+          logout() // Log out on error
+        }
+      }
+    }
+    setIsLoading(false)
+  }, [fetchAllDistributors, currentUser]) // Add currentUser to dependencies
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      setIsLoading(true)
+      try {
+        const fetchedDistributors = await fetchAllDistributors() // Fetch all first to calculate ranks
+
+        if (typeof window !== "undefined") {
+          const storedUserAddress = localStorage.getItem("currentUserAddress")
+          if (storedUserAddress) {
+            try {
+              const response = await fetch(`/api/distributors/wallet/${storedUserAddress}`)
+              if (response.ok) {
+                const userData: Distributor = await response.json() // Expecting camelCase
+                if (
+                  userData &&
+                  (userData.status === "approved" || userData.status === "pending" || userData.role === "admin")
+                ) {
+                  // Find rank from the already fetched and ranked list
+                  const userRank = fetchedDistributors.find((d) => d.id === userData.id)?.rank
+                  setCurrentUser({ ...userData, rank: userRank })
+                  setIsAuthenticated(true)
+                } else {
+                  localStorage.removeItem("currentUserAddress")
+                }
+              } else {
+                // 检查是否是管理员地址
+                const isAdminAddress = storedUserAddress.toLowerCase() === ADMIN_WALLET_ADDRESS.toLowerCase()
+                if (isAdminAddress) {
+                  // 为管理员创建临时用户对象
+                  const adminUser: Distributor = {
+                    id: "admin-temp",
+                    walletAddress: storedUserAddress,
+                    name: "平台管理员",
+                    email: "admin@picwe.com",
+                    role: "admin",
+                    roleType: "admin",
+                    status: "approved",
+                    registrationTimestamp: Date.now(),
+                    registrationDate: (() => {
+                      try {
+                        return new Date().toISOString().split("T")[0]
+                      } catch (error) {
+                        console.error("Date formatting error:", error)
+                        return new Date().toLocaleDateString("zh-CN")
+                      }
+                    })(),
+                    referralCode: "ADMINXYZ",
+                    totalPoints: 0,
+                    personalPoints: 0,
+                    commissionPoints: 0,
+                    referredUsers: [],
+                    rank: fetchedDistributors.find(
+                      (d) => d.walletAddress.toLowerCase() === ADMIN_WALLET_ADDRESS.toLowerCase(),
+                    )?.rank,
+                  }
+                  setCurrentUser(adminUser)
+                  setIsAuthenticated(true)
+                } else {
+                  localStorage.removeItem("currentUserAddress")
+                }
+              }
+            } catch (error) {
+              console.error("Error fetching user data from stored address:", error)
               localStorage.removeItem("currentUserAddress")
             }
           }
-        } else {
-          setCurrentUser(null)
-          setIsAuthenticated(false)
-          if (
-            typeof window !== "undefined" &&
-            localStorage.getItem("currentUserAddress") === activeUserContext.walletAddress
-          ) {
-            localStorage.removeItem("currentUserAddress")
-          }
         }
-      }
-    },
-    [],
-  )
-
-  useEffect(() => {
-    setIsLoading(true)
-    let userFromStorage: Distributor | null = null
-    let initialAuthStatus = false
-
-    if (typeof window !== "undefined") {
-      const storedUserAddress = localStorage.getItem("currentUserAddress")
-
-      if (storedUserAddress) {
-        userFromStorage = MOCK_DISTRIBUTORS_DB.find((d) => d.walletAddress === storedUserAddress) || null
-        if (userFromStorage) {
-          if (userFromStorage.status === "approved" || userFromStorage.status === "pending") {
-            initialAuthStatus = true
-          } else {
-            localStorage.removeItem("currentUserAddress")
-            userFromStorage = null
-          }
-        }
+      } catch (error) {
+        console.error("Error initializing auth:", error)
+      } finally {
+        setIsLoading(false)
       }
     }
+    initializeAuth()
+  }, [fetchAllDistributors]) // fetchAllDistributors is stable
 
-    setIsAuthenticated(initialAuthStatus)
-    updateStateAfterDbChange(MOCK_DISTRIBUTORS_DB, userFromStorage)
-    setIsLoading(false)
-  }, [updateStateAfterDbChange])
-
-  const loginWithWallet = async () => {
+  const loginWithWallet = async (
+    walletAddress: string,
+    nonce: string,
+    signature: string,
+  ): Promise<{ success: boolean; message: string }> => {
     setIsLoading(true)
     try {
-      const selectionOptions = MOCK_DISTRIBUTORS_DB.map(
-        (d, i) => `${i + 1}. ${d.name} (${d.roleType} - ${d.status} - ${d.walletAddress.substring(0, 6)}...)`,
-      ).join("\n")
-      const selection = prompt(`模拟连接钱包 - 请选择一个地址登录:\n${selectionOptions}\n输入数字选择:`)
+      const response = await fetch("/api/auth/verify-signature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: walletAddress, nonce, signature }),
+      })
 
-      let chosenUserFromDb: Distributor | null = null
-      if (selection && selection.trim()) {
-        const index = Number.parseInt(selection.trim()) - 1
-        if (index >= 0 && index < MOCK_DISTRIBUTORS_DB.length) {
-          chosenUserFromDb = MOCK_DISTRIBUTORS_DB[index]
+      const result = await response.json()
+
+      if (response.ok && result.distributor) {
+        const userData: Distributor = result.distributor // Already camelCase from API
+
+        if (!userData || typeof userData !== "object") {
+          throw new Error("Invalid user data received from server")
         }
-      }
 
-      if (chosenUserFromDb) {
-        const userToLogin = allDistributorsData.find((d) => d.id === chosenUserFromDb!.id) || chosenUserFromDb
+        // Ensure registrationDate exists and is valid
+        if (!userData.registrationDate) {
+          userData.registrationDate = new Date().toISOString().split("T")[0]
+        }
 
-        if (userToLogin.status === "approved") {
-          setIsAuthenticated(true)
-          if (typeof window !== "undefined") {
-            localStorage.setItem("currentUserAddress", userToLogin.walletAddress)
-          }
-          setCurrentUser(userToLogin)
+        console.log("Login successful, user data:", {
+          role: userData.role,
+          roleType: userData.roleType,
+          status: userData.status,
+          walletAddress: userData.walletAddress,
+        })
 
-          if (userToLogin.role === "admin") {
-            router.push("/admin/dashboard")
-          } else {
-            router.push("/dashboard")
-          }
-        } else if (userToLogin.status === "pending") {
-          setIsAuthenticated(true)
-          if (typeof window !== "undefined") {
-            localStorage.setItem("currentUserAddress", userToLogin.walletAddress)
-          }
-          setCurrentUser(userToLogin)
-          router.push("/dashboard")
-        } else if (userToLogin.status === "rejected") {
-          alert("您的账户申请已被拒绝。")
-          setIsAuthenticated(false)
-          setCurrentUser(null)
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("currentUserAddress")
-          }
+        // Fetch all distributors to ensure ranks are up-to-date before setting current user
+        const allDistributors = await fetchAllDistributors()
+        const userRank = allDistributors.find((d) => d.id === userData.id)?.rank
+
+        setCurrentUser({ ...userData, rank: userRank })
+        setIsAuthenticated(true)
+        if (typeof window !== "undefined") {
+          localStorage.setItem("currentUserAddress", userData.walletAddress)
+        }
+
+        // 根据用户角色进行重定向
+        if (userData.role === "admin") {
+          console.log("Redirecting admin to admin dashboard")
+          router.push("/admin/dashboard")
         } else {
-          alert("账户状态未知，无法登录。")
-          setIsAuthenticated(false)
-          setCurrentUser(null)
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("currentUserAddress")
-          }
+          console.log("Redirecting user to user dashboard")
+          router.push("/dashboard")
         }
+        return { success: true, message: result.message || "登录成功！" }
       } else {
-        alert("未选择或无效的用户。")
-        setIsAuthenticated(false)
+        // Clear any partial auth state on failure
         setCurrentUser(null)
+        setIsAuthenticated(false)
         if (typeof window !== "undefined") {
           localStorage.removeItem("currentUserAddress")
         }
+        return { success: false, message: result.error || "登录验证失败。" }
       }
     } catch (error) {
       console.error("Login error:", error)
-      alert("登录过程中发生错误。")
-      setIsAuthenticated(false)
       setCurrentUser(null)
+      setIsAuthenticated(false)
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("currentUserAddress")
+      }
+      return { success: false, message: "登录过程中发生客户端错误。" }
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   const logout = () => {
@@ -412,130 +292,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  // 船员注册（无需审核，直接通过）
   const registerCrew = async (name: string, email: string, walletAddress: string, uplineReferralCode: string) => {
     setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
     try {
-      const upline = MOCK_DISTRIBUTORS_DB.find(
-        (d) => d.referralCode && d.referralCode.toLowerCase() === uplineReferralCode.toLowerCase(),
-      )
-
-      if (!upline) {
-        setIsLoading(false)
-        return { success: false, message: "无效的邀请码。" }
+      const response = await fetch("/api/distributors/register-crew", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, walletAddress, uplineReferralCode }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message || "船员注册成功！您现在可以登录了。" }
       }
-
-      if (upline.status !== "approved") {
-        setIsLoading(false)
-        return { success: false, message: "邀请人账户未激活或无效。" }
-      }
-
-      if (
-        MOCK_DISTRIBUTORS_DB.some(
-          (d) =>
-            (d.walletAddress && d.walletAddress.toLowerCase() === walletAddress.toLowerCase()) ||
-            (d.email && d.email.toLowerCase() === email.toLowerCase()),
-        )
-      ) {
-        setIsLoading(false)
-        return { success: false, message: "钱包地址或邮箱已被注册。" }
-      }
-
-      const timestamp = Date.now()
-      const newCrewMember: Distributor = {
-        id: `crew${timestamp}`,
-        walletAddress,
-        name,
-        email,
-        role: "distributor",
-        roleType: "crew",
-        status: "approved", // 船员直接通过，无需审核
-        registrationTimestamp: timestamp,
-        registrationDate: formatDate(timestamp),
-        referralCode: `${name.substring(0, 3).toUpperCase()}${timestamp.toString().slice(-4)}`,
-        uplineDistributorId: upline.id,
-        downlineDistributorIds: [],
-        totalPoints: 0,
-        personalPoints: 0,
-        commissionPoints: 0,
-        referredUsers: [],
-      }
-
-      MOCK_DISTRIBUTORS_DB = [...MOCK_DISTRIBUTORS_DB, newCrewMember]
-      MOCK_DISTRIBUTORS_DB = MOCK_DISTRIBUTORS_DB.map((d) =>
-        d.id === upline.id
-          ? { ...d, downlineDistributorIds: [...(d.downlineDistributorIds || []), newCrewMember.id] }
-          : d,
-      )
-
-      updateStateAfterDbChange(MOCK_DISTRIBUTORS_DB, currentUser)
-      setIsLoading(false)
-      return { success: true, message: "船员注册成功！您现在可以登录了。" }
+      return { success: false, message: result.error || "注册失败，请检查您的信息。" }
     } catch (error) {
       console.error("Registration error:", error)
-      setIsLoading(false)
       return { success: false, message: "注册过程中发生错误。" }
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  // 船长注册（需要审核）
   const registerCaptain = async (name: string, email: string, walletAddress: string) => {
     setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
     try {
-      if (
-        MOCK_DISTRIBUTORS_DB.some(
-          (d) =>
-            (d.walletAddress && d.walletAddress.toLowerCase() === walletAddress.toLowerCase()) ||
-            (d.email && d.email.toLowerCase() === email.toLowerCase()),
-        )
-      ) {
-        setIsLoading(false)
-        return { success: false, message: "钱包地址或邮箱已被注册。" }
+      const response = await fetch("/api/distributors/register-captain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, walletAddress }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message || "船长申请提交成功！请等待管理员审核。" }
       }
-
-      const timestamp = Date.now()
-      const newCaptain: Distributor = {
-        id: `captain${timestamp}`,
-        walletAddress,
-        name,
-        email,
-        role: "distributor",
-        roleType: "captain",
-        status: "pending", // 船长需要审核
-        registrationTimestamp: timestamp,
-        registrationDate: formatDate(timestamp),
-        referralCode: `${name.substring(0, 3).toUpperCase()}CAP${timestamp.toString().slice(-3)}`,
-        uplineDistributorId: undefined, // 船长没有上级
-        downlineDistributorIds: [],
-        totalPoints: 0,
-        personalPoints: 0,
-        commissionPoints: 0,
-        referredUsers: [],
-      }
-
-      MOCK_DISTRIBUTORS_DB = [...MOCK_DISTRIBUTORS_DB, newCaptain]
-      updateStateAfterDbChange(MOCK_DISTRIBUTORS_DB, currentUser)
-      setIsLoading(false)
-      return { success: true, message: "船长申请提交成功！请等待管理员审核。" }
+      return { success: false, message: result.error || "注册失败，请检查您的信息。" }
     } catch (error) {
       console.error("Captain registration error:", error)
-      setIsLoading(false)
       return { success: false, message: "注册过程中发生错误。" }
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const approveDistributor = async (distributorId: string) => {
-    MOCK_DISTRIBUTORS_DB = MOCK_DISTRIBUTORS_DB.map((d) => (d.id === distributorId ? { ...d, status: "approved" } : d))
-    updateStateAfterDbChange(MOCK_DISTRIBUTORS_DB, currentUser)
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/distributors/${distributorId}/approve`, { method: "POST" })
+      if (response.ok) await refreshData()
+      else console.error("Failed to approve distributor", await response.json())
+    } catch (error) {
+      console.error("Error approving distributor:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const rejectDistributor = async (distributorId: string) => {
-    MOCK_DISTRIBUTORS_DB = MOCK_DISTRIBUTORS_DB.map((d) => (d.id === distributorId ? { ...d, status: "rejected" } : d))
-    updateStateAfterDbChange(MOCK_DISTRIBUTORS_DB, currentUser)
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/distributors/${distributorId}/reject`, { method: "POST" })
+      if (response.ok) await refreshData()
+      else console.error("Failed to reject distributor", await response.json())
+    } catch (error) {
+      console.error("Error rejecting distributor:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const adminRegisterOrPromoteCaptain = async (
@@ -545,143 +369,87 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     existingId?: string,
   ) => {
     setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
     try {
-      if (
-        !existingId ||
-        (existingId &&
-          MOCK_DISTRIBUTORS_DB.find((d) => d.id === existingId)?.email?.toLowerCase() !== email?.toLowerCase()) ||
-        (existingId &&
-          MOCK_DISTRIBUTORS_DB.find((d) => d.id === existingId)?.walletAddress?.toLowerCase() !==
-            walletAddress?.toLowerCase())
-      ) {
-        if (
-          MOCK_DISTRIBUTORS_DB.some(
-            (d) =>
-              d.id !== existingId &&
-              (d.walletAddress?.toLowerCase() === walletAddress?.toLowerCase() ||
-                d.email?.toLowerCase() === email?.toLowerCase()),
-          )
-        ) {
-          setIsLoading(false)
-          return { success: false, message: "钱包地址或邮箱已被其他用户注册。" }
-        }
+      const response = await fetch("/api/distributors/admin-captain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, walletAddress, existingId }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message }
       }
-
-      if (existingId) {
-        const userToPromote = MOCK_DISTRIBUTORS_DB.find((d) => d.id === existingId)
-        if (!userToPromote) {
-          setIsLoading(false)
-          return { success: false, message: "未找到要提升的用户。" }
-        }
-
-        if (userToPromote.uplineDistributorId) {
-          MOCK_DISTRIBUTORS_DB = MOCK_DISTRIBUTORS_DB.map((u) => {
-            if (u.id === userToPromote.uplineDistributorId) {
-              return {
-                ...u,
-                downlineDistributorIds: (u.downlineDistributorIds || []).filter((id) => id !== existingId),
-              }
-            }
-            return u
-          })
-        }
-
-        MOCK_DISTRIBUTORS_DB = MOCK_DISTRIBUTORS_DB.map((d) =>
-          d.id === existingId
-            ? {
-                ...d,
-                name,
-                email,
-                walletAddress,
-                roleType: "captain",
-                status: "approved",
-                uplineDistributorId: undefined,
-              }
-            : d,
-        )
-        updateStateAfterDbChange(MOCK_DISTRIBUTORS_DB, currentUser)
-        setIsLoading(false)
-        return { success: true, message: `${name} 已成功提升/更新为船长。` }
-      } else {
-        const timestamp = Date.now()
-        const newCaptain: Distributor = {
-          id: `captain${timestamp}`,
-          walletAddress,
-          name,
-          email,
-          role: "distributor",
-          roleType: "captain",
-          status: "approved",
-          registrationTimestamp: timestamp,
-          registrationDate: formatDate(timestamp),
-          referralCode: `${name.substring(0, 3).toUpperCase()}CAP${timestamp.toString().slice(-3)}`,
-          uplineDistributorId: undefined,
-          downlineDistributorIds: [],
-          totalPoints: 0,
-          personalPoints: 0,
-          commissionPoints: 0,
-          referredUsers: [],
-        }
-        MOCK_DISTRIBUTORS_DB = [...MOCK_DISTRIBUTORS_DB, newCaptain]
-        updateStateAfterDbChange(MOCK_DISTRIBUTORS_DB, currentUser)
-        setIsLoading(false)
-        return { success: true, message: `船长 ${name} 注册成功。` }
-      }
+      return { success: false, message: result.error }
     } catch (error) {
       console.error("Admin operation error:", error)
-      setIsLoading(false)
       return { success: false, message: "操作过程中发生错误。" }
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const getDownlineDetails = useCallback(
     (distributorId: string): Distributor[] => {
-      const distributor = allDistributorsData.find((d) => d.id === distributorId)
-      if (!distributor) return []
-      return distributor.downlineDistributorIds
-        .map((downlineId) => allDistributorsData.find((d) => d.id === downlineId))
-        .filter(Boolean) as Distributor[]
+      // This needs to recursively find all downlines, not just direct ones.
+      // For now, it returns direct downlines.
+      // A more complex function would be needed for full hierarchy.
+      const directDownlines = allDistributorsData.filter((d) => d.uplineDistributorId === distributorId)
+      // If you need to populate their 'downlineDistributors' recursively:
+      // return directDownlines.map(dd => ({
+      //   ...dd,
+      //   downlineDistributors: getDownlineDetails(dd.id) // Recursive call
+      // }));
+      return directDownlines
     },
     [allDistributorsData],
   )
 
-  const addPointsToDistributor = async (distributorId: string, points: number, isDirectEarning: boolean) => {
+  const triggerMockReferralPoints = async (referredCustomerAddress: string, newWusdBalance: number) => {
+    setIsLoading(true)
     try {
-      const tempDb = [...MOCK_DISTRIBUTORS_DB]
-      const distributorIndex = tempDb.findIndex((d) => d.id === distributorId)
-      if (distributorIndex === -1) return
-      const distributor = { ...tempDb[distributorIndex] }
-
-      if (isDirectEarning) {
-        distributor.personalPoints += points
+      const response = await fetch("/api/mock/trigger-referral-points", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referredCustomerAddress, newWusdBalance }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData() // Refresh data to see point changes
+        return { success: true, message: result.message }
       }
-      distributor.totalPoints += points
-      tempDb[distributorIndex] = distributor
+      return { success: false, message: result.error || "Failed to trigger points." }
+    } catch (error: any) {
+      console.error("Error triggering mock points:", error)
+      return { success: false, message: error.message || "Client error triggering points." }
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-      let currentUplineId = distributor.uplineDistributorId
-      const pointsForCommission = points
-
-      while (currentUplineId) {
-        const uplineIndex = tempDb.findIndex((d) => d.id === currentUplineId)
-        if (uplineIndex === -1) break
-        const uplineMember = { ...tempDb[uplineIndex] }
-        const commissionAmount = Math.floor(pointsForCommission * UPLINE_COMMISSION_RATE)
-
-        if (commissionAmount > 0) {
-          uplineMember.commissionPoints += commissionAmount
-          uplineMember.totalPoints += commissionAmount
-          tempDb[uplineIndex] = uplineMember
-        } else {
-          break
-        }
-        currentUplineId = uplineMember.uplineDistributorId
+  const adminManualAddPoints = async (
+    targetDistributorWalletAddress: string,
+    points: number,
+    pointType: "personal" | "commission",
+  ) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/admin/add-points", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetDistributorWalletAddress, points, pointType }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message }
       }
-      MOCK_DISTRIBUTORS_DB = tempDb
-      updateStateAfterDbChange(MOCK_DISTRIBUTORS_DB, currentUser)
-    } catch (error) {
-      console.error("Add points error:", error)
+      return { success: false, message: result.error || "Failed to add points by admin." }
+    } catch (error: any) {
+      console.error("Error admin adding points:", error)
+      return { success: false, message: error.message || "Client error admin adding points." }
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -700,7 +468,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         adminRegisterOrPromoteCaptain,
         allDistributorsData,
         getDownlineDetails,
-        addPointsToDistributor,
+        refreshData,
+        triggerMockReferralPoints,
+        adminManualAddPoints,
       }}
     >
       {children}

@@ -5,8 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Users, ArrowDownCircle, TrendingUp, PlusCircle } from "lucide-react"
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button" // Import Button
-import { Input } from "@/components/ui/input" // Import Input
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+
+// 安全的数字格式化函数
+const safeToLocaleString = (value: number | null | undefined): string => {
+  if (typeof value !== "number" || isNaN(value)) return "0"
+  return value.toLocaleString()
+}
 
 export default function DownlinesPage() {
   const {
@@ -35,19 +41,19 @@ export default function DownlinesPage() {
   }
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && currentUser.id) {
       const details = getDownlineDetails(currentUser.id)
-      setDownlines(details)
+      setDownlines(details || [])
     }
   }, [currentUser, getDownlineDetails, allDistributorsData]) // Listen to allDistributorsData for re-renders on point changes
 
   // Re-fetch downline details if currentUser or allDistributorsData changed, ensuring UI updates
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && currentUser.id) {
       const freshDownlines = getDownlineDetails(currentUser.id)
       // Check if downlines actually changed to prevent infinite loops if getDownlineDetails isn't memoized correctly
       if (JSON.stringify(freshDownlines) !== JSON.stringify(downlines)) {
-        setDownlines(freshDownlines)
+        setDownlines(freshDownlines || [])
       }
     }
   }, [currentUser, allDistributorsData, getDownlineDetails, downlines])
@@ -95,46 +101,52 @@ export default function DownlinesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-700/50">
-                {downlines.map((d) => (
-                  <TableRow key={d.id} className="hover:bg-gray-700/30">
-                    <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">{d.name}</TableCell>
-                    <TableCell className="px-5 py-3 text-sm text-picwe-lightGrayText whitespace-nowrap">
-                      {d.roleType === "captain" ? "船长" : "船员"}
-                    </TableCell>
-                    <TableCell className="px-5 py-3 text-sm text-picwe-yellow font-semibold whitespace-nowrap">
-                      {d.totalPoints.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
-                      {d.personalPoints.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
-                      {d.commissionPoints.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap text-center">
-                      {d.downlineDistributorIds.length}
-                    </TableCell>
-                    <TableCell className="px-5 py-3 text-sm whitespace-nowrap">
-                      <div className="flex items-center space-x-1">
-                        <Input
-                          type="number"
-                          placeholder="积分"
-                          value={pointInputs[d.id] || ""}
-                          onChange={(e) => handlePointInputChange(d.id, e.target.value)}
-                          className="bg-picwe-black border-gray-600 text-white placeholder-gray-500 rounded-md py-1 px-2 text-xs w-20 h-7"
-                        />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleAddPoints(d.id)}
-                          className="h-7 w-7 text-green-400 hover:bg-green-500/20 hover:text-green-300"
-                          title="给该用户增加直接积分"
-                        >
-                          <PlusCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {downlines.map((d) => {
+                  if (!d || !d.id) return null
+
+                  return (
+                    <TableRow key={d.id} className="hover:bg-gray-700/30">
+                      <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
+                        {d.name || "未知用户"}
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-sm text-picwe-lightGrayText whitespace-nowrap">
+                        {d.role_type === "captain" ? "船长" : d.role_type === "crew" ? "船员" : "未知"}
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-sm text-picwe-yellow font-semibold whitespace-nowrap">
+                        {safeToLocaleString(d.total_points)}
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
+                        {safeToLocaleString(d.personal_points)}
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
+                        {safeToLocaleString(d.commission_points)}
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap text-center">
+                        {(d.downline_distributor_ids && d.downline_distributor_ids.length) || 0}
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-sm whitespace-nowrap">
+                        <div className="flex items-center space-x-1">
+                          <Input
+                            type="number"
+                            placeholder="积分"
+                            value={pointInputs[d.id] || ""}
+                            onChange={(e) => handlePointInputChange(d.id, e.target.value)}
+                            className="bg-picwe-black border-gray-600 text-white placeholder-gray-500 rounded-md py-1 px-2 text-xs w-20 h-7"
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleAddPoints(d.id)}
+                            className="h-7 w-7 text-green-400 hover:bg-green-500/20 hover:text-green-300"
+                            title="给该用户增加直接积分"
+                          >
+                            <PlusCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           ) : (
@@ -147,7 +159,7 @@ export default function DownlinesPage() {
         </CardContent>
       </Card>
 
-      {currentUser.uplineDistributorId && (
+      {currentUser.upline_distributor_id && (
         <Card className="bg-picwe-darkGray rounded-xl shadow-xl border-gray-700/50 mt-6">
           <CardHeader className="p-5">
             <CardTitle className="text-lg font-semibold text-white flex items-center">
@@ -157,18 +169,20 @@ export default function DownlinesPage() {
           </CardHeader>
           <CardContent className="p-5">
             {(() => {
-              const upline = allDistributorsData.find((d) => d.id === currentUser.uplineDistributorId)
+              const upline = allDistributorsData.find((d) => d && d.id === currentUser.upline_distributor_id)
               return upline ? (
                 <div className="space-y-1">
                   <p className="text-sm text-picwe-lightGrayText">
-                    名称: <span className="text-white font-medium">{upline.name}</span>
+                    名称: <span className="text-white font-medium">{upline.name || "未知"}</span>
                   </p>
                   <p className="text-sm text-picwe-lightGrayText">
                     类型:{" "}
-                    <span className="text-white font-medium">{upline.roleType === "captain" ? "船长" : "船员"}</span>
+                    <span className="text-white font-medium">
+                      {upline.role_type === "captain" ? "船长" : upline.role_type === "crew" ? "船员" : "未知"}
+                    </span>
                   </p>
                   <p className="text-sm text-picwe-lightGrayText">
-                    联系邮箱: <span className="text-white font-medium">{upline.email}</span>
+                    联系邮箱: <span className="text-white font-medium">{upline.email || "未设置"}</span>
                   </p>
                 </div>
               ) : (

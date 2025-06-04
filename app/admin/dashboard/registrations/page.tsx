@@ -12,10 +12,9 @@ import { Badge } from "@/components/ui/badge"
 import { useState, type FormEvent } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react" // Import Loader2
+import { Loader2 } from "lucide-react"
 
 // StatusBadge and RoleTypeBadge remain the same
-
 const StatusBadge = ({ status }: { status: Distributor["status"] }) => {
   switch (status) {
     case "pending":
@@ -41,7 +40,7 @@ const StatusBadge = ({ status }: { status: Distributor["status"] }) => {
   }
 }
 
-const RoleTypeBadge = ({ roleType }: { roleType: Distributor["roleType"] }) => {
+const RoleTypeBadge = ({ roleType }: { roleType: Distributor["role_type"] }) => {
   switch (roleType) {
     case "captain":
       return (
@@ -62,11 +61,31 @@ const RoleTypeBadge = ({ roleType }: { roleType: Distributor["roleType"] }) => {
   }
 }
 
+// 安全的字符串截取函数
+const safeSubstring = (str: string | null | undefined, start: number, end?: number): string => {
+  if (!str || typeof str !== "string") return ""
+  return end !== undefined ? str.substring(start, end) : str.substring(start)
+}
+
+// 安全的钱包地址显示函数
+const formatWalletAddress = (address: string | null | undefined): string => {
+  if (!address || typeof address !== "string" || address.length < 10) {
+    return "无效地址"
+  }
+  return `${safeSubstring(address, 0, 6)}...${safeSubstring(address, address.length - 4)}`
+}
+
+// 安全的名称截取函数
+const formatName = (name: string | null | undefined, maxLength = 10): string => {
+  if (!name || typeof name !== "string") return "-"
+  return name.length > maxLength ? `${safeSubstring(name, 0, maxLength)}...` : name
+}
+
 export default function AdminRegistrationsPage() {
   const { allDistributorsData, approveDistributor, rejectDistributor, adminRegisterOrPromoteCaptain, isLoading } =
     useAuth()
   const [filterStatus, setFilterStatus] = useState<Distributor["status"] | "all">("all")
-  const [filterRoleType, setFilterRoleType] = useState<Distributor["roleType"] | "all">("all")
+  const [filterRoleType, setFilterRoleType] = useState<Distributor["role_type"] | "all">("all")
 
   // State for the "Add/Promote Captain" form
   const [captainForm, setCaptainForm] = useState({
@@ -78,11 +97,19 @@ export default function AdminRegistrationsPage() {
   const [isEditingCaptain, setIsEditingCaptain] = useState(false)
 
   const handleApprove = async (id: string) => {
+    if (!id) {
+      toast.error("无效的经销商ID")
+      return
+    }
     await approveDistributor(id)
     toast.success("经销商已批准。")
   }
 
   const handleReject = async (id: string) => {
+    if (!id) {
+      toast.error("无效的经销商ID")
+      return
+    }
     await rejectDistributor(id)
     toast.success("经销商已拒绝。")
   }
@@ -113,22 +140,27 @@ export default function AdminRegistrationsPage() {
   }
 
   const startPromoteToCaptain = (distributor: Distributor) => {
+    if (!distributor || !distributor.id) {
+      toast.error("无效的经销商数据")
+      return
+    }
     setCaptainForm({
       id: distributor.id,
-      name: distributor.name,
-      email: distributor.email,
-      walletAddress: distributor.walletAddress,
+      name: distributor.name || "",
+      email: distributor.email || "",
+      walletAddress: distributor.wallet_address || "",
     })
     setIsEditingCaptain(true)
     // Scroll to form or open modal might be good UX here
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  const filteredDistributors = allDistributorsData
-    .filter((d) => d.role === "distributor")
+  // 安全过滤经销商数据
+  const filteredDistributors = (allDistributorsData || [])
+    .filter((d) => d && d.role === "distributor") // 确保数据存在且是经销商
     .filter((d) => filterStatus === "all" || d.status === filterStatus)
-    .filter((d) => filterRoleType === "all" || d.roleType === filterRoleType)
-    .sort((a, b) => b.registrationTimestamp - a.registrationTimestamp)
+    .filter((d) => filterRoleType === "all" || d.role_type === filterRoleType)
+    .sort((a, b) => (b.registration_timestamp || 0) - (a.registration_timestamp || 0))
 
   return (
     <div className="space-y-6">
@@ -221,10 +253,9 @@ export default function AdminRegistrationsPage() {
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <h1 className="text-xl font-semibold text-white">经销商列表</h1>
         <div className="flex gap-3 flex-wrap">
-          {/* Filters remain the same */}
           <Select
             value={filterRoleType}
-            onValueChange={(value: Distributor["roleType"] | "all") => setFilterRoleType(value)}
+            onValueChange={(value: Distributor["role_type"] | "all") => setFilterRoleType(value)}
           >
             <SelectTrigger className="w-full md:w-[160px] bg-picwe-darkGray border-gray-700 text-picwe-lightGrayText text-xs rounded-md focus:ring-picwe-yellow h-9">
               <SelectValue placeholder="筛选类型" />
@@ -297,29 +328,30 @@ export default function AdminRegistrationsPage() {
               </TableHeader>
               <TableBody className="divide-y divide-gray-700/50">
                 {filteredDistributors.map((distributor) => {
-                  const upline = distributor.uplineDistributorId
-                    ? allDistributorsData.find((d) => d.id === distributor.uplineDistributorId)
+                  // 安全获取上级信息
+                  const upline = distributor.upline_distributor_id
+                    ? allDistributorsData.find((d) => d && d.id === distributor.upline_distributor_id)
                     : null
+
                   return (
-                    <TableRow key={distributor.id} className="hover:bg-gray-700/30">
+                    <TableRow key={distributor.id || Math.random()} className="hover:bg-gray-700/30">
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
-                        {distributor.name}
+                        {distributor.name || "未知用户"}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm whitespace-nowrap">
-                        <RoleTypeBadge roleType={distributor.roleType} />
+                        <RoleTypeBadge roleType={distributor.role_type} />
                       </TableCell>
                       <TableCell
                         className="px-5 py-3 text-xs text-picwe-lightGrayText font-mono whitespace-nowrap"
-                        title={distributor.walletAddress}
+                        title={distributor.wallet_address || "无钱包地址"}
                       >
-                        {distributor.walletAddress.substring(0, 6)}...
-                        {distributor.walletAddress.substring(distributor.walletAddress.length - 4)}
+                        {formatWalletAddress(distributor.wallet_address)}
                       </TableCell>
                       <TableCell
                         className="px-5 py-3 text-sm text-picwe-lightGrayText whitespace-nowrap"
-                        title={upline?.email}
+                        title={upline?.email || "无上级"}
                       >
-                        {upline ? `${upline.name.substring(0, 10)}${upline.name.length > 10 ? "..." : ""}` : "-"}
+                        {upline ? formatName(upline.name) : "-"}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-center">
                         <StatusBadge status={distributor.status} />
@@ -349,7 +381,7 @@ export default function AdminRegistrationsPage() {
                             </Button>
                           </>
                         )}
-                        {distributor.roleType === "crew" && distributor.status === "approved" && (
+                        {distributor.role_type === "crew" && distributor.status === "approved" && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -361,12 +393,12 @@ export default function AdminRegistrationsPage() {
                             <Anchor className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        {distributor.roleType === "captain" && distributor.status === "approved" && (
+                        {distributor.role_type === "captain" && distributor.status === "approved" && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 text-xs px-2 py-1 h-7"
-                            onClick={() => startPromoteToCaptain(distributor)} // "Promote" here means "Edit" for captain
+                            onClick={() => startPromoteToCaptain(distributor)}
                             disabled={isLoading}
                             title="编辑船长信息"
                           >

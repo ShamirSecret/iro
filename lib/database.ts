@@ -4,7 +4,7 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is not set")
 }
 
-const sql = neon(process.env.DATABASE_URL)
+export const sql = neon(process.env.DATABASE_URL)
 
 // Interfaces (DbDistributor, DbReferredUser, Distributor, ReferredUser, mappers) remain the same as previous version...
 // Interfaces for data as it comes from the database (snake_case)

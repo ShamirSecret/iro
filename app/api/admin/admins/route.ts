@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { sql } from "@neondatabase/serverless"
+import { sql } from "@/lib/database"
 
 // 获取所有管理员
 export async function GET() {

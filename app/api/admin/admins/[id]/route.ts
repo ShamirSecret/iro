@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { sql } from "@neondatabase/serverless"
+import { sql } from "@/lib/database"
 
 // 更新管理员信息
 export async function PUT(request: Request, { params }: { params: { id: string } }) {

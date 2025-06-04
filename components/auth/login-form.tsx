@@ -28,7 +28,7 @@ export default function LoginForm() {
 
   // 检查是否安装了 MetaMask
   const checkIfMetaMaskInstalled = () => {
-    const isInstalled = typeof window !== "undefined" && window.ethereum && window.ethereum.isMetaMask
+    const isInstalled = typeof window !== "undefined" && typeof window.ethereum !== "undefined"
     setMetamaskDetected(!!isInstalled)
     return isInstalled
   }
@@ -37,8 +37,9 @@ export default function LoginForm() {
     // 初始检查MetaMask是否安装
     checkIfMetaMaskInstalled()
 
-    // 如果没有MetaMask，不需要继续
-    if (metamaskDetected === false) return
+    if (typeof window === "undefined") return
+    const ethereum = window.ethereum
+    if (!ethereum) return
 
     const handleAccountsChanged = (accounts: string[]) => {
       console.log("MetaMask accounts changed (login form):", accounts)
@@ -56,24 +57,20 @@ export default function LoginForm() {
       }
     }
 
-    // 尝试获取当前账户
-    if (window.ethereum && metamaskDetected !== false) {
-      window.ethereum
-        .request({ method: "eth_accounts" })
-        .then(handleAccountsChanged)
-        .catch((err) => console.error("Error fetching initial accounts:", err))
+    // 获取当前账户并监听变更
+    ethereum
+      .request({ method: "eth_accounts" })
+      .then(handleAccountsChanged)
+      .catch((err) => console.error("Error fetching initial accounts:", err))
 
-      // 添加账户变更监听器
-      window.ethereum.on("accountsChanged", handleAccountsChanged)
+    ethereum.on("accountsChanged", handleAccountsChanged)
 
-      // 清理函数
-      return () => {
-        if (window.ethereum?.removeListener) {
-          window.ethereum.removeListener("accountsChanged", handleAccountsChanged)
-        }
+    return () => {
+      if (ethereum.removeListener) {
+        ethereum.removeListener("accountsChanged", handleAccountsChanged)
       }
     }
-  }, [metamaskDetected]) // 移除 address 依赖，避免无限循环
+  }, [])
 
   // 连接 MetaMask
   const connectWallet = async () => {

@@ -48,13 +48,13 @@ export default function RegisterForm() {
 
   // 检查是否安装了 MetaMask
   const checkIfMetaMaskInstalled = () => {
-    return typeof window !== "undefined" && window.ethereum && window.ethereum.isMetaMask
+    return typeof window !== "undefined" && typeof window.ethereum !== "undefined"
   }
 
   useEffect(() => {
-    if (!checkIfMetaMaskInstalled() || !window.ethereum) {
-      return
-    }
+    if (typeof window === "undefined") return
+    const ethereum = window.ethereum
+    if (!ethereum) return
 
     const handleAccountsChanged = (accounts: string[]) => {
       console.log("MetaMask accounts changed (register form):", accounts)
@@ -72,16 +72,16 @@ export default function RegisterForm() {
     }
 
     // Attempt to get current accounts on mount
-    window.ethereum
+    ethereum
       .request({ method: "eth_accounts" })
       .then(handleAccountsChanged)
       .catch((err) => console.error("Error fetching initial accounts (register):", err))
 
-    window.ethereum.on("accountsChanged", handleAccountsChanged)
+    ethereum.on("accountsChanged", handleAccountsChanged)
 
     return () => {
-      if (window.ethereum?.removeListener) {
-        window.ethereum.removeListener("accountsChanged", handleAccountsChanged)
+      if (ethereum.removeListener) {
+        ethereum.removeListener("accountsChanged", handleAccountsChanged)
       }
     }
   }, []) // 移除 walletAddress 依赖，避免无限循环

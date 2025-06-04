@@ -248,7 +248,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })
 
         // Fetch all distributors to ensure ranks are up-to-date before setting current user
-        const allDistributors = await fetchAllDistributors()
+        let allDistributors: Distributor[] = []
+        try {
+          allDistributors = await fetchAllDistributors()
+        } catch (error) {
+          console.error("Error fetching distributors during login:", error)
+          // Proceed without distributors data
+          allDistributors = []
+        }
         const userRank = allDistributors.find((d) => d.id === userData.id)?.rank
 
         setCurrentUser({ ...userData, rank: userRank })

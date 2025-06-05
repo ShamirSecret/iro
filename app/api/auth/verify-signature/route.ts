@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getDistributorByWallet } from "@/lib/database"
 import { verifyMessage } from "ethers" // Changed from ethers/lib/utils
+import { sql } from "@/lib/database"
 
 const ADMIN_WALLET_ADDRESS = "0x442368f7b5192f9164a11a5387194cb5718673b9"
 
@@ -10,6 +11,34 @@ export async function POST(request: Request) {
 
     if (!address || !nonce || !signature) {
       return NextResponse.json({ error: "缺少必要的参数：地址、Nonce 或签名。" }, { status: 400 })
+    }
+
+    // nonce 校验
+    const NONCE_EXPIRE_SECONDS = 300 // 5分钟
+    const nonceResult = await sql`
+      SELECT id, created_at, used FROM nonces WHERE nonce = ${nonce} LIMIT 1
+    `
+    if (nonceResult.length === 0) {
+      return NextResponse.json({ error: "无效的随机码（nonce）。" }, { status: 400 })
+    }
+    const nonceRow = nonceResult[0]
+    if (nonceRow.used) {
+      return NextResponse.json({ error: "该随机码已被使用，请刷新重试。" }, { status: 400 })
+    }
+    const createdAt = new Date(nonceRow.created_at)
+    const currentTime = Date.now();
+    const [timestampStr] = nonce.split('-');
+    const generatedTime = parseInt(timestampStr, 10);
+    const elapsed = currentTime - generatedTime;
+
+    // 从5分钟延长到10分钟 + 30秒缓冲
+    const MAX_VALID_DURATION = 630000; // 10.5分钟
+
+    if (elapsed > MAX_VALID_DURATION) {
+      return NextResponse.json(
+        { error: `随机码已过期 (${Math.round(elapsed/1000)}秒)` },
+        { status: 400 }
+      );
     }
 
     // 正常签名验证流程
@@ -39,6 +68,9 @@ export async function POST(request: Request) {
       })
       return NextResponse.json({ error: "签名无效或与提供的地址不匹配。" }, { status: 401 })
     }
+
+    // 验证通过后，标记 nonce 为已用
+    await sql`UPDATE nonces SET used = true WHERE nonce = ${nonce}`
 
     console.log("Signature successfully verified for address:", address)
 

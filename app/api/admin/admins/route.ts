@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { sql } from "@/lib/database"
+import { generateReferralCode } from "@/lib/database"
 
 // 获取所有管理员
 export async function GET() {
@@ -52,8 +53,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "该邮箱已被注册" }, { status: 400 })
     }
 
-    const timestamp = Date.now()
-    const referralCode = `ADMIN${timestamp.toString().slice(-6)}`
+    const referralCode = generateReferralCode(name)
 
     const result = await sql`
       INSERT INTO distributors (
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
         registration_timestamp, referral_code, total_points, personal_points, commission_points
       ) VALUES (
         ${walletAddress}, ${name}, ${email}, 'admin', 'admin', 'approved',
-        ${timestamp}, ${referralCode}, 0, 0, 0
+        ${Date.now()}, ${referralCode}, 0, 0, 0
       )
       RETURNING 
         id, wallet_address, name, email, role, role_type, status,

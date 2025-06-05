@@ -85,10 +85,13 @@ export default function LoginForm() {
 
   // 连接 MetaMask
   const connectWallet = async () => {
-    setError(null)
-    setIsConnecting(true)
-
+    if (isSigning) return;
+    
+    setIsSigning(true);
     try {
+      setError(null)
+      setIsConnecting(true)
+
       // 检查是否安装了 MetaMask
       if (!checkIfMetaMaskInstalled()) {
         throw new Error("请安装 MetaMask 钱包后再试。您可以从 https://metamask.io 下载。")
@@ -128,6 +131,7 @@ export default function LoginForm() {
       setAddress(null) // 连接失败时清除地址
     } finally {
       setIsConnecting(false)
+      setIsSigning(false)
     }
   }
 
@@ -137,18 +141,24 @@ export default function LoginForm() {
     setError(null)
 
     try {
-      if (!window.ethereum) {
-        throw new Error("MetaMask 未检测到。")
-      }
-
+      const startTime = Date.now();
+      
       // 获取 nonce
-      const nonceResponse = await fetch("/api/auth/nonce")
-      if (!nonceResponse.ok) {
-        const errorData = await nonceResponse.json().catch(() => ({}))
-        throw new Error(errorData.error || "获取签名挑战失败。")
-      }
-      const { nonce } = await nonceResponse.json()
-
+      const nonceRes = await fetch("/api/auth/nonce");
+      const nonceReceivedTime = Date.now();
+      const { nonce } = await nonceRes.json();
+      
+      // 解析 nonce 中的时间戳
+      const [timestampStr] = nonce.split('-');
+      const generatedTime = parseInt(timestampStr, 10);
+      
+      console.log("Nonce 时间线:", {
+        生成时间: new Date(generatedTime).toISOString(),
+        接收时间: new Date(nonceReceivedTime).toISOString(),
+        时间差: `${nonceReceivedTime - generatedTime}ms`,
+        当前时间: new Date().toISOString()
+      });
+      
       // 创建要签名的消息
       const message = `请签名此消息以验证您的身份：\n\n随机码: ${nonce}\n\n此操作不会产生任何费用。`
 
@@ -169,7 +179,7 @@ export default function LoginForm() {
         throw new Error(loginResult.message)
       }
     } catch (error: any) {
-      console.error("签名错误:", error)
+      console.error("签名错误详情:", error);
       let errorMessage = "签名过程中发生错误。"
 
       if (error.code === 4001) {

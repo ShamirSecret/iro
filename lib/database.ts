@@ -188,7 +188,7 @@ export async function createCrew(
 ): Promise<Distributor> {
   try {
     const timestamp = Date.now()
-    const referralCode = `${name.substring(0, 3).toUpperCase()}${timestamp.toString().slice(-4)}`
+    const referralCode = generateReferralCode(name)
     const result: DbDistributor[] = await sql`
   INSERT INTO distributors (
     wallet_address, name, email, role, role_type, status,
@@ -215,7 +215,7 @@ export async function createCrew(
 export async function createCaptain(name: string, email: string, walletAddress: string): Promise<Distributor> {
   try {
     const timestamp = Date.now()
-    const referralCode = `${name.substring(0, 3).toUpperCase()}CAP${timestamp.toString().slice(-3)}`
+    const referralCode = generateReferralCode(name)
     const result: DbDistributor[] = await sql`
   INSERT INTO distributors (
     wallet_address, name, email, role, role_type, status,
@@ -627,4 +627,18 @@ export async function addPointsToDistributor(
     console.error("Error adding points to distributor:", error)
     throw new Error("Failed to add points to distributor")
   }
+}
+
+export function generateReferralCode(name: string): string {
+  // 清理名字中的空格，取前3字符
+  const prefix = name.substring(0, 3).toUpperCase().replace(/\s/g, '');
+  
+  // 确保前缀至少3字符（不足用X填充）
+  const cleanPrefix = prefix.padEnd(3, 'X');
+  
+  const timestamp = Date.now();
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000); // 4位随机数
+  
+  // 格式: ABC + 时间戳中间4位 + 4位随机数
+  return `${cleanPrefix}${timestamp.toString().slice(-6, -2)}${randomSuffix}`;
 }

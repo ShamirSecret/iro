@@ -1,4 +1,3 @@
--- 创建经销商表
 CREATE TABLE IF NOT EXISTS distributors (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     wallet_address VARCHAR(42) UNIQUE NOT NULL,
@@ -11,6 +10,8 @@ CREATE TABLE IF NOT EXISTS distributors (
     registration_date DATE NOT NULL DEFAULT CURRENT_DATE,
     referral_code VARCHAR(50) UNIQUE NOT NULL,
     upline_distributor_id UUID REFERENCES distributors(id),
+    hierarchy_level INTEGER NOT NULL DEFAULT 1,
+    team_size INTEGER NOT NULL DEFAULT 0,
     total_points INTEGER NOT NULL DEFAULT 0,
     personal_points INTEGER NOT NULL DEFAULT 0,
     commission_points INTEGER NOT NULL DEFAULT 0,
@@ -18,7 +19,6 @@ CREATE TABLE IF NOT EXISTS distributors (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 创建推荐用户表
 CREATE TABLE IF NOT EXISTS referred_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     distributor_id UUID NOT NULL REFERENCES distributors(id) ON DELETE CASCADE,
@@ -28,15 +28,44 @@ CREATE TABLE IF NOT EXISTS referred_users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 创建索引
+CREATE TABLE IF NOT EXISTS point_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    distributor_id UUID NOT NULL REFERENCES distributors(id),
+    amount INTEGER NOT NULL,
+    point_type VARCHAR(20) NOT NULL CHECK (point_type IN ('personal', 'commission', 'activity')),
+    source VARCHAR(50) NOT NULL,
+    reference_id UUID,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS commission_rates (
+    id SERIAL PRIMARY KEY,
+    level INTEGER NOT NULL,
+    rate DECIMAL(5,4) NOT NULL CHECK (rate BETWEEN 0 AND 1),
+    valid_from TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    valid_to TIMESTAMP WITH TIME ZONE,
+    notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS nonces (
+    id SERIAL PRIMARY KEY,
+    nonce TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    used BOOLEAN NOT NULL DEFAULT FALSE
+  );
+
 CREATE INDEX IF NOT EXISTS idx_distributors_wallet_address ON distributors(wallet_address);
 CREATE INDEX IF NOT EXISTS idx_distributors_referral_code ON distributors(referral_code);
 CREATE INDEX IF NOT EXISTS idx_distributors_upline ON distributors(upline_distributor_id);
 CREATE INDEX IF NOT EXISTS idx_distributors_status ON distributors(status);
 CREATE INDEX IF NOT EXISTS idx_distributors_role_type ON distributors(role_type);
 CREATE INDEX IF NOT EXISTS idx_referred_users_distributor ON referred_users(distributor_id);
+CREATE INDEX IF NOT EXISTS idx_point_transactions_distributor ON point_transactions(distributor_id);
+CREATE INDEX IF NOT EXISTS idx_commission_rates_level ON commission_rates(level);
+CREATE INDEX IF NOT EXISTS idx_nonces_nonce ON nonces(nonce);
+CREATE INDEX IF NOT EXISTS idx_nonces_used ON nonces(used);
 
--- 创建更新时间触发器
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -47,3 +76,23 @@ $$ language 'plpgsql';
 
 CREATE TRIGGER update_distributors_updated_at BEFORE UPDATE ON distributors
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE OR REPLACE FUNCTION update_team_size()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' AND NEW.upline_distributor_id IS NOT NULL THEN
+        UPDATE distributors
+        SET team_size = team_size + 1
+        WHERE id = NEW.upline_distributor_id;
+    ELSIF TG_OP = 'DELETE' AND OLD.upline_distributor_id IS NOT NULL THEN
+        UPDATE distributors
+        SET team_size = team_size - 1
+        WHERE id = OLD.upline_distributor_id;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_team_size_trigger
+AFTER INSERT OR DELETE ON distributors
+FOR EACH ROW EXECUTE FUNCTION update_team_size();

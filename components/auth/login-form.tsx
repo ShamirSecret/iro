@@ -28,14 +28,17 @@ export default function LoginForm() {
 
   // 强制只使用 MetaMask 提供者
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window.ethereum as any)?.providers) {
-      const providers = (window.ethereum as any).providers as any[];
-      const metamask = providers.find((p: any) => p.isMetaMask);
-      if (metamask) {
-        window.ethereum = metamask;
+    if (typeof window !== 'undefined') {
+      const anyEth = (window.ethereum as any);
+      // 支持稳定版 MetaMask (providers) 和 Nightly shim (detected)
+      const list = anyEth.providers ?? anyEth.detected;
+      if (Array.isArray(list) && list.length > 0) {
+        const mm = list.find((p: any) => p.isMetaMask);
+        window.ethereum = mm || list[0];
+        console.log('选择的 Ethereum provider:', window.ethereum);
       }
     }
-  }, [])
+  }, []);
 
   // 检查是否安装了 MetaMask
   const checkIfMetaMaskInstalled = () => {
@@ -163,7 +166,7 @@ export default function LoginForm() {
       const message = `请签名此消息以验证您的身份：\n\n随机码: ${nonce}\n\n此操作不会产生任何费用。`
 
       // 请求签名
-      const signature = await window.ethereum.request({
+      const signature = await window.ethereum!.request({
         method: "personal_sign",
         params: [message, walletAddress],
       })

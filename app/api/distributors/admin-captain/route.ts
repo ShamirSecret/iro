@@ -14,6 +14,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "请输入有效的以太坊钱包地址" }, { status: 400 })
     }
 
+    if (!/^[A-Za-z0-9]{3,20}$/.test(name)) {
+      return NextResponse.json({ error: "用户名只能由3-20位字母和数字组成。" }, { status: 400 })
+    }
+  
+    if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email) || email.length > 50) {
+      return NextResponse.json({ error: "请输入有效的邮箱地址，且长度不超过50个字符。" }, { status: 400 });
+    }
     // 如果是编辑现有船长
     if (existingId) {
       // 这里应该有更新船长信息的逻辑

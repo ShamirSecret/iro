@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { sql } from "@/lib/database";
+import { sql, processDailySnapshotAndCommissions } from "@/lib/database";
 
 let cronInitialized = false;
 
@@ -15,6 +15,13 @@ if (!cronInitialized) {
     console.log("Cleaned expired nonces");
   });
   
+  // 每天 UTC 0 点执行积分增加
+  cron.schedule("0 0 * * *", async () => {
+    console.log("Daily snapshot started at", new Date().toISOString());
+    const result = await processDailySnapshotAndCommissions();
+    console.log("Daily snapshot processed:", result);
+  }, { timezone: "UTC" });
+
   cronInitialized = true;
   console.log("Cron jobs initialized");
 } else {

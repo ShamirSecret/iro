@@ -55,6 +55,12 @@ CREATE TABLE IF NOT EXISTS nonces (
     used BOOLEAN NOT NULL DEFAULT FALSE
   );
 
+-- CREATE TABLE IF NOT EXISTS distributor_balances (
+--     distributor_id UUID PRIMARY KEY REFERENCES distributors(id) ON DELETE CASCADE,
+--     wusd_balance INTEGER NOT NULL DEFAULT 0,
+--     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+-- );
+
 CREATE INDEX IF NOT EXISTS idx_distributors_wallet_address ON distributors(wallet_address);
 CREATE INDEX IF NOT EXISTS idx_distributors_referral_code ON distributors(referral_code);
 CREATE INDEX IF NOT EXISTS idx_distributors_upline ON distributors(upline_distributor_id);
@@ -65,6 +71,7 @@ CREATE INDEX IF NOT EXISTS idx_point_transactions_distributor ON point_transacti
 CREATE INDEX IF NOT EXISTS idx_commission_rates_level ON commission_rates(level);
 CREATE INDEX IF NOT EXISTS idx_nonces_nonce ON nonces(nonce);
 CREATE INDEX IF NOT EXISTS idx_nonces_used ON nonces(used);
+CREATE INDEX IF NOT EXISTS idx_distributor_balances_balance ON distributor_balances(wusd_balance);
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

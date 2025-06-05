@@ -55,7 +55,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   // 修复：使用 status 而不是 isApproved，并且排除管理员
-  if (currentUser.role !== "admin" && currentUser.status !== "approved") {
+  if (currentUser.status !== "approved") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-picwe-black text-center p-6">
         <ShieldAlert className="h-12 w-12 text-picwe-yellow mb-5" />
@@ -72,9 +72,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </p>
           <p>
             用户类型: <span className="text-picwe-yellow">{currentUser.roleType === "captain" ? "船长" : "船员"}</span>
-          </p>
-          <p>
-            用户角色: <span className="text-picwe-yellow">{currentUser.role}</span>
           </p>
         </div>
         <Button

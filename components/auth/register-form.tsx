@@ -144,6 +144,18 @@ export default function RegisterForm() {
       return
     }
 
+    // 用户名校验
+    if (!/^[A-Za-z0-9]{3,20}$/.test(name)) {
+      setMessage({ text: "用户名只能由3-20位字母和数字组成。", type: "error" })
+      return
+    }
+
+    // 邮箱校验
+    if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email) || email.length > 50) {
+      setMessage({ text: "请输入有效的邮箱地址，且长度不超过50个字符。", type: "error" });
+      return;
+    }
+
     let result
     if (isCaptainRegistration) {
       // 注册船长（需要审核）

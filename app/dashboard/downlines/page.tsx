@@ -88,9 +88,6 @@ export default function DownlinesPage() {
                     名称
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    类型
-                  </TableHead>
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
                     总积分
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
@@ -112,9 +109,6 @@ export default function DownlinesPage() {
                     <TableRow key={d.id} className="hover:bg-gray-700/30">
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
                         {d.name || "未知船员"}
-                      </TableCell>
-                      <TableCell className="px-5 py-3 text-sm text-picwe-lightGrayText whitespace-nowrap">
-                        {d.role_type === "captain" ? "船长" : d.role_type === "crew" ? "船员" : "未知"}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-picwe-yellow font-semibold whitespace-nowrap">
                         {safeToLocaleString(d.total_points)}

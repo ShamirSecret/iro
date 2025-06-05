@@ -46,8 +46,8 @@ export default function RegisterForm() {
   const isCaptainRegistration = !uplineReferralCode.trim()
   const isCrewRegistration = uplineReferralCode.trim().length > 0
 
-  // 检查是否安装了 MetaMask
-  const checkIfMetaMaskInstalled = () => {
+  // 检查是否安装了加密钱包
+  const checkIfWalletInstalled = () => {
     return typeof window !== "undefined" && typeof window.ethereum !== "undefined"
   }
 
@@ -86,18 +86,18 @@ export default function RegisterForm() {
     }
   }, []) // 移除 walletAddress 依赖，避免无限循环
 
-  // 连接 MetaMask 获取地址
-  const connectMetaMask = async () => {
+  // 连接加密钱包获取地址
+  const connectWallet = async () => {
     setWalletError(null)
     setIsConnectingWallet(true)
 
     try {
-      if (!checkIfMetaMaskInstalled()) {
-        throw new Error("请安装 MetaMask 钱包。您可以从 https://metamask.io 下载。")
+      if (!checkIfWalletInstalled()) {
+        throw new Error("请安装加密钱包插件。您可以从各大钱包官网下载。")
       }
 
       if (!window.ethereum) {
-        throw new Error("未检测到 MetaMask，请确保已安装并启用。")
+        throw new Error("未检测到加密钱包插件，请确保已安装并启用。")
       }
 
       const accounts = await window.ethereum.request({
@@ -105,20 +105,20 @@ export default function RegisterForm() {
       })
 
       if (!accounts || accounts.length === 0) {
-        throw new Error("未能获取钱包地址，请确保 MetaMask 已解锁并授权连接。")
+        throw new Error("未能获取钱包地址，请确保钱包已解锁并授权连接。")
       }
 
       const address = accounts[0]
       setWalletAddress(address)
       setWalletError(null)
     } catch (error: any) {
-      console.error("连接 MetaMask 错误:", error)
+      console.error("连接加密钱包错误:", error)
       let errorMessage = "连接钱包失败，请重试。"
 
       if (error.code === 4001) {
         errorMessage = "用户拒绝了连接请求。"
       } else if (error.code === -32002) {
-        errorMessage = "MetaMask 连接请求已在处理中，请检查 MetaMask 弹窗。"
+        errorMessage = "钱包连接请求已在处理中，请检查钱包弹窗。"
       } else if (error.message) {
         errorMessage = error.message
       }
@@ -161,13 +161,13 @@ export default function RegisterForm() {
     }
   }
 
-  // 强制只使用 MetaMask 提供者
+  // 强制只使用加密钱包主 provider
   useEffect(() => {
     if (typeof window !== 'undefined' && (window.ethereum as any)?.providers) {
       const providers = (window.ethereum as any).providers as any[];
-      const metamask = providers.find((p: any) => p.isMetaMask);
-      if (metamask) {
-        window.ethereum = metamask;
+      const mainProvider = providers.find((p: any) => p.isMetaMask) || providers[0];
+      if (mainProvider) {
+        window.ethereum = mainProvider;
       }
     }
   }, [])
@@ -245,7 +245,7 @@ export default function RegisterForm() {
                 id="walletAddress"
                 value={walletAddress}
                 onChange={(e) => setWalletAddress(e.target.value)}
-                placeholder="0x... 或点击右侧按钮连接 MetaMask"
+                placeholder="0x... 或点击右侧按钮连接加密钱包"
                 required
                 className="bg-picwe-darkGray border-gray-700 text-white placeholder-gray-500 rounded-lg py-3 focus:ring-picwe-yellow focus:border-picwe-yellow flex-1"
               />
@@ -261,10 +261,10 @@ export default function RegisterForm() {
               ) : (
                 <Button
                   type="button"
-                  onClick={connectMetaMask}
+                  onClick={connectWallet}
                   disabled={isConnectingWallet}
                   className="bg-picwe-yellow text-picwe-black hover:bg-yellow-400 rounded-lg px-4 py-3 flex items-center justify-center min-w-[120px]"
-                  title="连接 MetaMask 获取地址"
+                  title="连接加密钱包获取地址"
                 >
                   {isConnectingWallet ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -335,9 +335,9 @@ export default function RegisterForm() {
         </p>
 
         <div className="mt-6 text-xs text-picwe-lightGrayText/70 space-y-2">
-          <p>💡 提示：您可以手动输入钱包地址，或点击"连接"按钮从 MetaMask 自动获取</p>
+          <p>💡 提示：您可以手动输入钱包地址，或点击"连接"按钮从加密钱包自动获取</p>
           <p>
-            如果没有安装 MetaMask，请访问{" "}
+            如果没有安装加密钱包插件，可访问
             <a
               href="https://metamask.io"
               target="_blank"
@@ -345,8 +345,8 @@ export default function RegisterForm() {
               className="text-picwe-yellow hover:underline"
             >
               metamask.io
-            </a>{" "}
-            下载
+            </a>
+            或各大钱包官网下载
           </p>
         </div>
       </div>

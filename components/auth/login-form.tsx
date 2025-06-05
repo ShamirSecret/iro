@@ -227,7 +227,7 @@ export default function LoginForm() {
         </Link>
 
         <h1 className="text-4xl font-extrabold text-white mb-4">进入您的专属领域</h1>
-        <p className="text-lg text-picwe-lightGrayText mb-10">连接您的 MetaMask 钱包，开启航海之旅。</p>
+        <p className="text-lg text-picwe-lightGrayText mb-10">连接您的加密钱包，开启航海之旅。</p>
 
         <div className="w-full space-y-6">
           {isLoading ? (
@@ -271,7 +271,7 @@ export default function LoginForm() {
                 disabled={metamaskDetected === false}
               >
                 <Wallet className="mr-3 h-6 w-6" />
-                连接 MetaMask 钱包
+                连接加密钱包
               </Button>
             </>
           )}
@@ -287,7 +287,7 @@ export default function LoginForm() {
           {metamaskDetected === false && (
             <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4 mt-4">
               <p className="text-yellow-400 text-sm">
-                未检测到MetaMask钱包。请安装MetaMask后再试。
+                未检测到加密钱包插件。请安装钱包插件（如 MetaMask、Nightly、SafePal 等）后再试。
               </p>
               <a
                 href="https://metamask.io/download/"
@@ -295,7 +295,7 @@ export default function LoginForm() {
                 rel="noopener noreferrer"
                 className="text-picwe-yellow hover:underline text-sm mt-2 inline-block"
               >
-                下载MetaMask
+                了解常用钱包
               </a>
             </div>
           )}
@@ -309,9 +309,9 @@ export default function LoginForm() {
         </p>
 
         <div className="mt-6 text-xs text-picwe-lightGrayText/70 space-y-2">
-          <p>请确保您的 MetaMask 钱包已安装并连接到支持的网络</p>
+          <p>请确保您的加密钱包插件已安装并连接到支持的网络</p>
           <p>
-            如果没有安装 MetaMask，请访问{" "}
+            如果没有安装钱包插件，可访问
             <a
               href="https://metamask.io"
               target="_blank"
@@ -319,8 +319,8 @@ export default function LoginForm() {
               className="text-picwe-yellow hover:underline"
             >
               metamask.io
-            </a>{" "}
-            下载
+            </a>
+            或各大钱包官网下载
           </p>
         </div>
       </div>

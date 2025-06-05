@@ -28,8 +28,8 @@ export default function LoginForm() {
 
   // 强制只使用 MetaMask 提供者
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const anyEth = (window.ethereum as any);
+    if (typeof window !== 'undefined' && window.ethereum) {
+      const anyEth = window.ethereum as any;
       // 支持稳定版 MetaMask (providers) 和 Nightly shim (detected)
       const list = anyEth.providers ?? anyEth.detected;
       if (Array.isArray(list) && list.length > 0) {

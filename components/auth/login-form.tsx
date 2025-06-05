@@ -287,7 +287,7 @@ export default function LoginForm() {
           {metamaskDetected === false && (
             <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4 mt-4">
               <p className="text-yellow-400 text-sm">
-                未检测到加密钱包插件。请安装钱包插件（如 MetaMask、Nightly、SafePal 等）后再试。
+                未检测到加密钱包插件。请安装钱包插件（如 MetaMask,okx,safepal 等）后再试。
               </p>
               <a
                 href="https://metamask.io/download/"

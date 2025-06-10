@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server"
 import { getReferredUserAddresses } from "@/lib/database"
 
+// 添加 BALANCE_UPDATE_SECRET
+const BALANCE_UPDATE_SECRET = process.env.BALANCE_UPDATE_SECRET
+
 // 获取推荐用户地址接口，支持按创建时间增量拉取
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const since = searchParams.get("since") || undefined
   const limitParam = searchParams.get("limit")
   const limit = limitParam ? parseInt(limitParam, 10) : 100
+
+  const authHeader = request.headers.get("Authorization");
+  if (BALANCE_UPDATE_SECRET && authHeader !== `Bearer ${BALANCE_UPDATE_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   if (isNaN(limit) || limit <= 0) {
     return NextResponse.json({ error: "limit 必须是正整数" }, { status: 400 })

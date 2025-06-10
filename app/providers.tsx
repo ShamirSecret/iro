@@ -61,6 +61,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const ADMIN_WALLET_ADDRESS = "0x442368f7b5192f9164a11a5387194cb5718673b9" // 更新的管理员地址
 
+// 获取用于 fetch 的 Authorization header，如果无 token 则返回 undefined
+const getAuthHeaders = (): HeadersInit | undefined => {
+  if (typeof window === 'undefined') return undefined;
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : undefined;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<Distributor | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -71,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchAllDistributors = useCallback(async (): Promise<Distributor[]> => {
     try {
-      const response = await fetch("/api/distributors")
+      const response = await fetch("/api/distributors", { headers: getAuthHeaders() })
       if (!response.ok) throw new Error("Failed to fetch distributors")
       const data: Distributor[] = await response.json() // Expecting camelCase data
 
@@ -105,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // If a user is logged in, refresh their specific data too
     if (currentUser && currentUser.walletAddress) {
       try {
-        const response = await fetch(`/api/distributors/wallet/${currentUser.walletAddress}`)
+        const response = await fetch(`/api/distributors/wallet/${currentUser.walletAddress}`, { headers: getAuthHeaders() })
         if (response.ok) {
           const userData: Distributor = await response.json() // Expecting camelCase
           if (
@@ -148,7 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const storedUserAddress = localStorage.getItem("currentUserAddress")
           if (storedUserAddress) {
             try {
-              const response = await fetch(`/api/distributors/wallet/${storedUserAddress}`)
+              const response = await fetch(`/api/distributors/wallet/${storedUserAddress}`, { headers: getAuthHeaders() })
               if (response.ok) {
                 const userData: Distributor = await response.json() // Expecting camelCase
                 if (
@@ -230,6 +237,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await response.json()
 
       if (response.ok && result.distributor) {
+        // 登录成功后，先存储返回的 JWT，以便后续接口请求携带 Authorization
+        if (result.token) {
+          localStorage.setItem('token', result.token)
+        }
         const userData: Distributor = result.distributor // Already camelCase from API
 
         if (!userData || typeof userData !== "object") {
@@ -273,6 +284,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.log("Redirecting user to user dashboard")
           router.push("/dashboard")
         }
+
         return { success: true, message: result.message || "登录成功！" }
       } else {
         // Clear any partial auth state on failure

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getDistributorByWallet } from "@/lib/database"
 import { verifyMessage } from "ethers" // Changed from ethers/lib/utils
 import { sql } from "@/lib/database"
+import { SignJWT } from 'jose'
 
 const ADMIN_WALLET_ADDRESS = "0x442368f7b5192f9164a11a5387194cb5718673b9"
 
@@ -102,11 +103,16 @@ export async function POST(request: Request) {
           commissionPoints: distributor?.commissionPoints || 0,
           referredUsers: distributor?.referredUsers || [],
         }
-        // Optionally, upsert this admin record into the database here if it's missing or incorrect
-        // For now, we'll proceed with the constructed object for login
+        // 生成 JWT
+        const jwt = await new SignJWT({ address, id: adminUser.id, role: adminUser.role })
+          .setProtectedHeader({ alg: 'HS256' })
+          .setIssuedAt()
+          .setExpirationTime('24h')
+          .sign(new TextEncoder().encode(process.env.JWT_SECRET!))
         return NextResponse.json({
-          message: "管理员登录成功！",
+          message: '管理员登录成功！',
           distributor: adminUser,
+          token: jwt
         })
       }
     }
@@ -126,9 +132,17 @@ export async function POST(request: Request) {
       distributor.status = "approved"
     }
 
+    // 登录通过后，生成 JWT
+    const jwt = await new SignJWT({ address, id: distributor.id, role: distributor.role })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(new TextEncoder().encode(process.env.JWT_SECRET!))
+
     return NextResponse.json({
       message: "登录成功！",
       distributor,
+      token: jwt
     })
   } catch (error: any) {
     console.error("Login verification error:", error)

@@ -679,3 +679,29 @@ export async function updateReferredUserWusdBalance(
     return { success: false, message: `更新失败: ${error.message}` }
   }
 }
+
+// 添加获取推荐用户地址函数，用于按创建时间增量拉取
+export async function getReferredUserAddresses(options: { since?: string; limit?: number }): Promise<{ address: string; createdAt: string }[]> {
+  const { since, limit = 100 } = options
+  let rows: Array<{ address: string; created_at: string }>
+  if (since) {
+    rows = await sql`
+      SELECT address, created_at
+      FROM referred_users
+      WHERE created_at > ${since}
+      ORDER BY created_at ASC
+      LIMIT ${limit}
+    `
+  } else {
+    rows = await sql`
+      SELECT address, created_at
+      FROM referred_users
+      ORDER BY created_at ASC
+      LIMIT ${limit}
+    `
+  }
+  return rows.map(r => ({
+    address: r.address,
+    createdAt: new Date(r.created_at).toISOString(),
+  }))
+}

@@ -512,9 +512,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const addAdmin = async (name: string, email: string, walletAddress: string) => {
     setIsLoading(true)
     try {
+      const headers = { ...(getAuthHeaders() || {}), "Content-Type": "application/json" }
       const response = await fetch("/api/admin/admins", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ name, email, walletAddress }),
       })
       const result = await response.json()
@@ -534,9 +535,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const updateAdmin = async (id: string, name: string, email: string, walletAddress: string) => {
     setIsLoading(true)
     try {
+      const headers = { ...(getAuthHeaders() || {}), "Content-Type": "application/json" }
       const response = await fetch(`/api/admin/admins/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ name, email, walletAddress }),
       })
       const result = await response.json()
@@ -556,8 +558,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const deleteAdmin = async (id: string) => {
     setIsLoading(true)
     try {
+      const headers = getAuthHeaders() || {}
       const response = await fetch(`/api/admin/admins/${id}`, {
         method: "DELETE",
+        headers,
       })
       const result = await response.json()
       if (response.ok) {

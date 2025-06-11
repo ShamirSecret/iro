@@ -102,8 +102,12 @@ export default function AdminRegistrationsPage() {
       toast.error("无效的船员ID")
       return
     }
-    await approveDistributor(id)
-    toast.success("船员已批准。")
+    const result = await approveDistributor(id)
+    if (result.success) {
+      toast.success("船员已批准。")
+    } else {
+      toast.error(result.message || "批准失败")
+    }
   }
 
   const handleReject = async (id: string) => {
@@ -111,8 +115,12 @@ export default function AdminRegistrationsPage() {
       toast.error("无效的船员ID")
       return
     }
-    await rejectDistributor(id)
-    toast.success("船员已拒绝。")
+    const result = await rejectDistributor(id)
+    if (result.success) {
+      toast.success("船员已拒绝。")
+    } else {
+      toast.error(result.message || "拒绝失败")
+    }
   }
 
   const handleCaptainFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {

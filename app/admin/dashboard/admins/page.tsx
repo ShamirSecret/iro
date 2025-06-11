@@ -3,7 +3,8 @@
 import type React from "react"
 
 import { useState, type FormEvent } from "react"
-import { useAuth, type Distributor } from "@/app/providers"
+import { useAuth } from "@/app/providers"
+import type { Distributor } from "@/lib/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -21,7 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 
 export default function AdminsManagementPage() {
-  const { allDistributorsData, isLoading } = useAuth()
+  const { allDistributorsData, isLoading, addAdmin, updateAdmin, deleteAdmin } = useAuth()
   const [isAddingAdmin, setIsAddingAdmin] = useState(false)
   const [isEditingAdmin, setIsEditingAdmin] = useState(false)
   const [selectedAdminId, setSelectedAdminId] = useState<string | null>(null)
@@ -49,11 +50,14 @@ export default function AdminsManagementPage() {
     }
 
     try {
-      // 这里应该调用API来添加管理员
-      // 由于我们没有实现这个API，这里只是模拟
-      toast.success("管理员添加成功")
-      setAdminForm({ name: "", email: "", walletAddress: "" })
-      setIsAddingAdmin(false)
+      const result = await addAdmin(adminForm.name, adminForm.email, adminForm.walletAddress)
+      if (result.success) {
+        toast.success(result.message)
+        setAdminForm({ name: "", email: "", walletAddress: "" })
+        setIsAddingAdmin(false)
+      } else {
+        toast.error(result.message)
+      }
     } catch (error) {
       toast.error("添加管理员失败")
       console.error("添加管理员错误:", error)
@@ -69,12 +73,15 @@ export default function AdminsManagementPage() {
     }
 
     try {
-      // 这里应该调用API来更新管理员
-      // 由于我们没有实现这个API，这里只是模拟
-      toast.success("管理员信息更新成功")
-      setAdminForm({ name: "", email: "", walletAddress: "" })
-      setIsEditingAdmin(false)
-      setSelectedAdminId(null)
+      const result = await updateAdmin(selectedAdminId as string, adminForm.name, adminForm.email, adminForm.walletAddress)
+      if (result.success) {
+        toast.success(result.message)
+        setAdminForm({ name: "", email: "", walletAddress: "" })
+        setIsEditingAdmin(false)
+        setSelectedAdminId(null)
+      } else {
+        toast.error(result.message)
+      }
     } catch (error) {
       toast.error("更新管理员失败")
       console.error("更新管理员错误:", error)
@@ -85,7 +92,7 @@ export default function AdminsManagementPage() {
     setAdminForm({
       name: admin.name || "",
       email: admin.email || "",
-      walletAddress: admin.wallet_address || "",
+      walletAddress: admin.walletAddress || "",
     })
     setSelectedAdminId(admin.id)
     setIsEditingAdmin(true)
@@ -96,11 +103,14 @@ export default function AdminsManagementPage() {
     if (!adminToDelete) return
 
     try {
-      // 这里应该调用API来删除管理员
-      // 由于我们没有实现这个API，这里只是模拟
-      toast.success(`管理员 ${adminToDelete.name} 已删除`)
-      setIsDeleteDialogOpen(false)
-      setAdminToDelete(null)
+      const result = await deleteAdmin(adminToDelete.id)
+      if (result.success) {
+        toast.success(`管理员 ${adminToDelete.name} 已删除`)
+        setIsDeleteDialogOpen(false)
+        setAdminToDelete(null)
+      } else {
+        toast.error(result.message)
+      }
     } catch (error) {
       toast.error("删除管理员失败")
       console.error("删除管理员错误:", error)
@@ -256,11 +266,11 @@ export default function AdminsManagementPage() {
                     </TableCell>
                     <TableCell
                       className="px-5 py-3 text-xs text-picwe-lightGrayText font-mono whitespace-nowrap"
-                      title={admin.wallet_address}
+                      title={admin.walletAddress}
                     >
-                      {admin.wallet_address
-                        ? `${admin.wallet_address.substring(0, 6)}...${admin.wallet_address.substring(
-                            admin.wallet_address.length - 4,
+                      {admin.walletAddress
+                        ? `${admin.walletAddress.substring(0, 6)}...${admin.walletAddress.substring(
+                            admin.walletAddress.length - 4,
                           )}`
                         : "无钱包地址"}
                     </TableCell>
@@ -286,7 +296,7 @@ export default function AdminsManagementPage() {
                         className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
                         onClick={() => startDeleteAdmin(admin)}
                         title="删除"
-                        disabled={admin.wallet_address === "0x442368f7b5192f9164a11a5387194cb5718673b9"} // 禁止删除主管理员
+                        disabled={admin.walletAddress === "0x442368f7b5192f9164a11a5387194cb5718673b9"}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>

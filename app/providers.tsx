@@ -25,8 +25,8 @@ interface AuthContextType {
     email: string,
     walletAddress: string,
   ) => Promise<{ success: boolean; message: string }>
-  approveDistributor: (distributorId: string) => Promise<void>
-  rejectDistributor: (distributorId: string) => Promise<void>
+  approveDistributor: (distributorId: string) => Promise<{ success: boolean; message?: string }>
+  rejectDistributor: (distributorId: string) => Promise<{ success: boolean; message?: string }>
   adminRegisterOrPromoteCaptain: (
     name: string,
     email: string,
@@ -368,11 +368,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const approveDistributor = async (distributorId: string) => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/distributors/${distributorId}/approve`, { method: "POST" })
-      if (response.ok) await refreshData()
-      else console.error("Failed to approve distributor", await response.json())
-    } catch (error) {
+      const headers = getAuthHeaders()
+      const response = await fetch(`/api/distributors/${distributorId}/approve`, {
+        method: "POST",
+        headers: headers,
+      })
+      if (response.ok) {
+        await refreshData()
+        return { success: true }
+      } else {
+        const errorResult = await response.json()
+        console.error("Failed to approve distributor", errorResult)
+        return { success: false, message: errorResult.error || "批准失败" }
+      }
+    } catch (error: any) {
       console.error("Error approving distributor:", error)
+      return { success: false, message: error.message || "批准过程中发生错误" }
     } finally {
       setIsLoading(false)
     }
@@ -381,11 +392,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const rejectDistributor = async (distributorId: string) => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/distributors/${distributorId}/reject`, { method: "POST" })
-      if (response.ok) await refreshData()
-      else console.error("Failed to reject distributor", await response.json())
-    } catch (error) {
+      const headers = getAuthHeaders()
+      const response = await fetch(`/api/distributors/${distributorId}/reject`, {
+        method: "POST",
+        headers: headers,
+      })
+      if (response.ok) {
+        await refreshData()
+        return { success: true }
+      } else {
+        const errorResult = await response.json()
+        console.error("Failed to reject distributor", errorResult)
+        return { success: false, message: errorResult.error || "拒绝失败" }
+      }
+    } catch (error: any) {
       console.error("Error rejecting distributor:", error)
+      return { success: false, message: error.message || "拒绝过程中发生错误" }
     } finally {
       setIsLoading(false)
     }

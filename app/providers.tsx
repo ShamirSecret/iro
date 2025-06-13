@@ -55,6 +55,7 @@ interface AuthContextType {
     walletAddress: string,
   ) => Promise<{ success: boolean; message: string }>
   deleteAdmin: (id: string) => Promise<{ success: boolean; message: string }>
+  deleteDistributor: (id: string) => Promise<{ success: boolean; message: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -577,6 +578,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  // 新增：删除分销商（船长/船员）
+  const deleteDistributor = async (id: string) => {
+    setIsLoading(true)
+    try {
+      const headers = getAuthHeaders() || {}
+      const response = await fetch(`/api/distributors/${id}`, {
+        method: "DELETE",
+        headers,
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message }
+      }
+      return { success: false, message: result.error }
+    } catch (error) {
+      console.error("Error deleting distributor:", error)
+      return { success: false, message: "删除分销商失败" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -598,6 +622,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         addAdmin,
         updateAdmin,
         deleteAdmin,
+        deleteDistributor,
       }}
     >
       {children}

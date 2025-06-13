@@ -36,6 +36,14 @@ export async function middleware(req: NextRequest) {
       const { payload } = await jwtVerify(token, JWT_SECRET);
       // 将用户信息注入请求头，供后续路由使用
       req.headers.set('x-user', JSON.stringify(payload));
+      // ADMIN ROLE CHECK: 仅限管理员访问 admin 接口
+      if (pathname.startsWith('/api/admin') && (payload as any).role !== 'admin') {
+        return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+      }
+      // ADMIN ROLE CHECK: 仅限管理员访问分销商管理接口
+      if (pathname.startsWith('/api/distributors/admin-captain') && (payload as any).role !== 'admin') {
+        return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+      }
       return NextResponse.next();
     } catch {
       return new NextResponse(JSON.stringify({ error: 'Invalid token' }), { status: 401 });

@@ -705,3 +705,55 @@ export async function getReferredUserAddresses(options: { since?: string; limit?
     createdAt: new Date(r.created_at).toISOString(),
   }))
 }
+
+// 新增：根据 ID 获取分销商
+export async function getDistributorById(id: string): Promise<Distributor | null> {
+  try {
+    const result: DbDistributor[] = await sql`
+      SELECT id, wallet_address, name, email, role, role_type, status,
+             registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
+             referral_code, upline_distributor_id, total_points, personal_points, commission_points
+      FROM distributors WHERE id = ${id}
+    `
+    if (result.length === 0) return null
+    const dbDistributor = result[0]
+    const base = mapDbDistributorToFrontend(dbDistributor)
+    const dbReferredUsers: DbReferredUser[] = await sql`
+      SELECT id, distributor_id, address, wusd_balance, points_earned
+      FROM referred_users WHERE distributor_id = ${dbDistributor.id}
+    `
+    return {
+      ...base,
+      referredUsers: dbReferredUsers.map(mapDbReferredUserToFrontend),
+    } as Distributor
+  } catch (error) {
+    console.error("Error fetching distributor by id:", error)
+    throw new Error("Failed to fetch distributor")
+  }
+}
+
+// 新增：清除指定分销商的下线关系
+export async function clearUplineForDistributors(uplineId: string): Promise<void> {
+  try {
+    await sql`
+      UPDATE distributors
+      SET upline_distributor_id = NULL
+      WHERE upline_distributor_id = ${uplineId}
+    `
+  } catch (error) {
+    console.error("Error clearing upline for distributors:", error)
+    throw new Error("Failed to clear upline relationships")
+  }
+}
+
+// 新增：删除分销商
+export async function deleteDistributor(id: string): Promise<void> {
+  try {
+    await sql`
+      DELETE FROM distributors WHERE id = ${id}
+    `
+  } catch (error) {
+    console.error("Error deleting distributor:", error)
+    throw new Error("Failed to delete distributor")
+  }
+}

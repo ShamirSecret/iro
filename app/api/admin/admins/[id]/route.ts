@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server"
 import { sql } from "@/lib/database"
 
+// 初始管理员钱包地址
+const INITIAL_ADMIN_WALLET_ADDRESS = "0x442368f7b5192f9164a11a5387194cb5718673b9"
+
 // 更新管理员信息
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const { name, email, walletAddress } = await request.json()
     const adminId = params.id
+
+    // 禁止修改初始管理员
+    const existingAdmin = await sql`SELECT wallet_address FROM distributors WHERE id = ${adminId} AND role = 'admin'`
+    if (existingAdmin.length > 0 && existingAdmin[0].wallet_address === INITIAL_ADMIN_WALLET_ADDRESS) {
+      return NextResponse.json({ error: "不能修改初始管理员" }, { status: 403 })
+    }
 
     if (!name || !email || !walletAddress) {
       return NextResponse.json({ error: "所有字段都是必填的" }, { status: 400 })

@@ -4,19 +4,59 @@ import { useState } from "react"
 import { useAuth } from "@/app/providers"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, User, Mail, Wallet } from "lucide-react"
+import { Search, User, Mail, Wallet, Trash2, CheckCircle, XCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Distributor } from "@/lib/database"
 
 export default function DistributorSearchPage() {
-  const { allDistributorsData } = useAuth()
+  const { allDistributorsData, deleteDistributor, approveDistributor, rejectDistributor } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
   const [searchType, setSearchType] = useState<"name" | "email" | "wallet">("name")
   const [searchResults, setSearchResults] = useState<typeof allDistributorsData>([])
   const [hasSearched, setHasSearched] = useState(false)
+
+  const handleDelete = async (distributor: Distributor) => {
+    if (!confirm(`确认删除或停用 ${distributor.name} 吗？此操作不可恢复。`)) return
+    const result = await deleteDistributor(distributor.id)
+    if (result.success) {
+      toast.success(result.message)
+      handleSearch()
+    } else {
+      toast.error(result.message)
+    }
+  }
+
+  const handleApprove = async (distributor: Distributor) => {
+    if (!distributor.id) {
+      toast.error("无效的船员ID")
+      return
+    }
+    const result = await approveDistributor(distributor.id)
+    if (result.success) {
+      toast.success("已批准")
+      setSearchResults(prev => prev.map(d => d.id === distributor.id ? { ...d, status: "approved" } : d))
+    } else {
+      toast.error(result.message || "批准失败")
+    }
+  }
+
+  const handleReject = async (distributor: Distributor) => {
+    if (!distributor.id) {
+      toast.error("无效的船员ID")
+      return
+    }
+    const result = await rejectDistributor(distributor.id)
+    if (result.success) {
+      toast.success("已拒绝")
+      setSearchResults(prev => prev.map(d => d.id === distributor.id ? { ...d, status: "rejected" } : d))
+    } else {
+      toast.error(result.message || "拒绝失败")
+    }
+  }
 
   const handleSearch = () => {
     if (!searchQuery.trim()) {
@@ -134,6 +174,9 @@ export default function DistributorSearchPage() {
                     <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-right">
                       积分
                     </TableHead>
+                    <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-right">
+                      操作
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-gray-700/50">
@@ -157,6 +200,39 @@ export default function DistributorSearchPage() {
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-picwe-yellow font-semibold whitespace-nowrap text-right">
                         {distributor.totalPoints.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-right space-x-1">
+                        {distributor.status === "pending" && distributor.roleType === "captain" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-green-400 hover:bg-green-500/20 hover:text-green-300 text-xs px-2 py-1 h-7"
+                              onClick={() => handleApprove(distributor)}
+                              title="批准"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
+                              onClick={() => handleReject(distributor)}
+                              title="拒绝"
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
+                          onClick={() => handleDelete(distributor)}
+                          title="删除"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

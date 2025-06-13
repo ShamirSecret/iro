@@ -14,6 +14,7 @@ import { useState, type FormEvent } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 
 // StatusBadge and RoleTypeBadge remain the same
 const StatusBadge = ({ status }: { status: Distributor["status"] }) => {
@@ -83,7 +84,7 @@ const formatName = (name: string | null | undefined, maxLength = 10): string => 
 }
 
 export default function AdminRegistrationsPage() {
-  const { allDistributorsData, approveDistributor, rejectDistributor, adminRegisterOrPromoteCaptain, isLoading } =
+  const { allDistributorsData, approveDistributor, rejectDistributor, adminRegisterOrPromoteCaptain, deleteDistributor, isLoading } =
     useAuth()
   const [filterStatus, setFilterStatus] = useState<Distributor["status"] | "all">("all")
   const [filterRoleType, setFilterRoleType] = useState<Distributor["roleType"] | "all">("all")
@@ -162,6 +163,20 @@ export default function AdminRegistrationsPage() {
     setIsEditingCaptain(true)
     // Scroll to form or open modal might be good UX here
     window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  // 删除船员处理函数
+  const handleDelete = async (id: string) => {
+    if (!id) {
+      toast.error("无效的船员ID")
+      return
+    }
+    const result = await deleteDistributor(id)
+    if (result.success) {
+      toast.success("船员已删除。")
+    } else {
+      toast.error(result.message || "删除失败")
+    }
   }
 
   // 安全过滤船员数据
@@ -412,6 +427,30 @@ export default function AdminRegistrationsPage() {
                             title="编辑船长信息"
                           >
                             <Edit3 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {distributor.roleType === "crew" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
+                            onClick={() => handleDelete(distributor.id)}
+                            disabled={isLoading}
+                            title="删除"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {distributor.roleType === "captain" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
+                            onClick={() => handleDelete(distributor.id)}
+                            disabled={isLoading}
+                            title="删除"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         )}
                       </TableCell>

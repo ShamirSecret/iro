@@ -42,8 +42,8 @@ export default function DashboardPage() {
       setDownlineMembers(members || [])
 
       // 生成邀请链接
-      const baseUrl = "https://v0-iro-fawn.vercel.app"
-      const referralCode = currentUser.referral_code || currentUser.referralCode || ""
+      const baseUrl = "https://sailing.picwe.org"
+      const referralCode = currentUser.referralCode || ""
       setInviteLink(`${baseUrl}/register?code=${referralCode}`)
     }
   }, [currentUser, getDownlineDetails])
@@ -59,7 +59,7 @@ export default function DashboardPage() {
   }
 
   const copyReferralCode = () => {
-    const referralCode = currentUser?.referral_code || currentUser?.referralCode
+    const referralCode = currentUser?.referralCode
     if (referralCode) {
       navigator.clipboard
         .writeText(referralCode)
@@ -105,12 +105,12 @@ export default function DashboardPage() {
 
   // 安全获取用户数据
   const userName = currentUser.name || "用户"
-  const userLevel = Math.floor((currentUser.total_points || 0) / 1000) + 1
-  const userPoints = currentUser.total_points || 0
-  const userWallet = currentUser.wallet_address || currentUser.walletAddress || ""
+  const userLevel = Math.floor((currentUser.totalPoints || 0) / 1000) + 1
+  const userPoints = currentUser.totalPoints || 0
+  const userWallet = currentUser.walletAddress || ""
   const userEmail = currentUser.email || ""
   const userRank = currentUser.rank || null
-  const referralCode = currentUser.referral_code || currentUser.referralCode || ""
+  const referralCode = currentUser.referralCode || ""
 
   return (
     <div className="space-y-6">
@@ -225,12 +225,12 @@ export default function DashboardPage() {
                             {member.name || "未知用户"}
                           </span>
                           <span className="text-sm font-semibold text-picwe-yellow">
-                            {safeToLocaleString(member.total_points)} 积分
+                            {safeToLocaleString(member.totalPoints)} 积分
                           </span>
                         </div>
                         <div className="text-xs text-picwe-lightGrayText mt-0.5">
                           类型:{" "}
-                          {member.role_type === "captain" ? "船长" : member.role_type === "crew" ? "船员" : "未知"}
+                          {member.roleType === "captain" ? "船长" : member.roleType === "crew" ? "船员" : "未知"}
                         </div>
                       </li>
                     )

@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 
+// 初始管理员钱包地址，禁止修改或删除
+const INITIAL_ADMIN_WALLET_ADDRESS = "0x442368f7b5192f9164a11a5387194cb5718673b9";
+
 export default function AdminsManagementPage() {
   const { allDistributorsData, isLoading, addAdmin, updateAdmin, deleteAdmin } = useAuth()
   const [isAddingAdmin, setIsAddingAdmin] = useState(false)
@@ -287,6 +290,7 @@ export default function AdminsManagementPage() {
                         className="text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 text-xs px-2 py-1 h-7"
                         onClick={() => startEditAdmin(admin)}
                         title="编辑"
+                        disabled={admin.walletAddress === INITIAL_ADMIN_WALLET_ADDRESS}
                       >
                         <Edit className="h-3.5 w-3.5" />
                       </Button>
@@ -296,7 +300,7 @@ export default function AdminsManagementPage() {
                         className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
                         onClick={() => startDeleteAdmin(admin)}
                         title="删除"
-                        disabled={admin.walletAddress === "0x442368f7b5192f9164a11a5387194cb5718673b9"}
+                        disabled={admin.walletAddress === INITIAL_ADMIN_WALLET_ADDRESS}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>

@@ -79,9 +79,9 @@ function mapDbDistributorToFrontend(
     registrationDate: dbDistributor.registration_date,
     referralCode: dbDistributor.referral_code,
     uplineDistributorId: dbDistributor.upline_distributor_id,
-    totalPoints: dbDistributor.total_points,
-    personalPoints: dbDistributor.personal_points,
-    commissionPoints: dbDistributor.commission_points,
+    totalPoints: Number(dbDistributor.total_points),
+    personalPoints: Number(dbDistributor.personal_points),
+    commissionPoints: Number(dbDistributor.commission_points),
   }
 }
 
@@ -90,8 +90,8 @@ function mapDbReferredUserToFrontend(dbReferredUser: DbReferredUser): ReferredUs
   return {
     id: dbReferredUser.id,
     address: dbReferredUser.address,
-    wusdBalance: dbReferredUser.wusd_balance,
-    pointsEarned: dbReferredUser.points_earned,
+    wusdBalance: Number(dbReferredUser.wusd_balance),
+    pointsEarned: Number(dbReferredUser.points_earned),
   }
 }
 

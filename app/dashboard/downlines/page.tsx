@@ -111,13 +111,13 @@ export default function DownlinesPage() {
                         {d.name || "未知船员"}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-picwe-yellow font-semibold whitespace-nowrap">
-                        {safeToLocaleString(d.total_points)}
+                        {safeToLocaleString(d.totalPoints)}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
-                        {safeToLocaleString(d.personal_points)}
+                        {safeToLocaleString(d.personalPoints)}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
-                        {safeToLocaleString(d.commission_points)}
+                        {safeToLocaleString(d.commissionPoints)}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap text-center">
                         {(d.downline_distributor_ids && d.downline_distributor_ids.length) || 0}

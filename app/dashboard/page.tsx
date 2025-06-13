@@ -127,10 +127,6 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-4 space-y-3">
               <div className="flex justify-between items-baseline">
-                <span className="text-sm text-picwe-lightGrayText">等级:</span>
-                <span className="text-lg font-bold text-white">LV {userLevel}</span>
-              </div>
-              <div className="flex justify-between items-baseline">
                 <span className="text-sm text-picwe-lightGrayText">积分:</span>
                 <span className="text-lg font-bold text-picwe-yellow">{safeToLocaleString(userPoints)}</span>
               </div>

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/app/providers"
 import Link from "next/link"
-import { Loader2, UserPlus, Zap, Anchor, Users, Wallet } from "lucide-react"
+import { Loader2, UserPlus, Anchor, Users, Wallet } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 // Declare window.ethereum type
@@ -186,9 +186,7 @@ export default function RegisterFormEN() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-6">
       <div className="z-10 flex flex-col items-center text-center max-w-md w-full">
         <Link href="/" className="mb-10 flex items-center space-x-3">
-          <div className="bg-yellow-500 p-2 rounded-lg">
-            <Zap className="h-8 w-8 text-black" />
-          </div>
+          <img src="/logo.jpg" alt="PicWe Invest Logo" className="h-12 w-12 rounded-lg" />
           <span className="text-3xl font-bold text-yellow-500">PicWe Invest</span>
         </Link>
 

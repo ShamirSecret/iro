@@ -289,9 +289,7 @@ export default function LoginForm() {
 
       <div className="z-10 flex flex-col items-center text-center max-w-md w-full">
         <Link href="/" className="mb-12 flex items-center space-x-3">
-          <div className="bg-yellow-500 p-2 rounded-lg">
-            <img src="/logo.jpg" alt="PicWe Invest Logo" className="h-8 w-8 rounded" />
-          </div>
+          <img src="/logo.jpg" alt="PicWe Invest Logo" className="h-10 w-10 rounded-lg" />
           <span className="text-4xl font-bold text-yellow-500">PicWe Invest</span>
         </Link>
 

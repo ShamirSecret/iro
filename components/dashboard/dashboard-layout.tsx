@@ -5,14 +5,12 @@ import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth, useLanguage } from "@/app/providers"
 import { Button } from "@/components/ui/button"
-import { Home, Users, BarChart3, LogOut, ShieldAlert, UserCircle, Copy, Zap } from "lucide-react"
+import { Home, Users, BarChart3, LogOut, ShieldAlert, UserCircle, Copy } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast, Toaster } from "sonner"
@@ -146,7 +144,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside className="w-60 bg-gray-800 p-5 border-r border-gray-700 flex flex-col fixed h-full z-10">
         <Link href="/dashboard" className="flex items-center space-x-2.5 mb-10">
-          <Zap className="h-7 w-7 text-yellow-500" />
+          <img src="/logo.jpg" alt="PicWe Invest Logo" className="h-10 w-10 rounded-lg" />
           <span className="text-2xl font-bold text-white">{language === "zh" ? "航海平台" : "PicWe Invest"}</span>
         </Link>
 
@@ -189,12 +187,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 flex flex-col ml-60">
         {/* Header */}
         <header className="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center sticky top-0 z-20 h-16">
-          <div className="flex items-center space-x-4">
-            <img src="/logo.jpg" alt="PicWe Invest Logo" className="h-8 w-8 rounded-lg" />
-            <div className="text-lg font-semibold text-white">
-              {navItems.find((item) => pathname.startsWith(item.href))?.name ||
-                (language === "zh" ? "仪表盘" : "Dashboard")}
-            </div>
+          <div className="text-lg font-semibold text-white">
+            {navItems.find((item) => pathname.startsWith(item.href))?.name ||
+              (language === "zh" ? "仪表盘" : "Dashboard")}
           </div>
 
           <div className="flex items-center space-x-3">
@@ -219,14 +214,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 align="end"
                 className="bg-gray-800 border-gray-700 text-gray-300 w-56 rounded-lg shadow-xl"
               >
-                <DropdownMenuLabel className="text-white text-sm px-3 py-2">
-                  {language === "zh" ? "我的账户" : "My Account"}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-gray-700" />
-                <DropdownMenuItem className="text-sm focus:bg-gray-700 focus:text-white cursor-not-allowed px-3 py-2 rounded-md">
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  {language === "zh" ? "个人资料 (暂未开放)" : "Profile (Coming Soon)"}
-                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={logout}
                   className="text-sm focus:bg-red-700/30 focus:text-red-400 cursor-pointer px-3 py-2 rounded-md"

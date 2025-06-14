@@ -60,7 +60,11 @@ export default function LoginForm() {
     const handleAccountsChanged = (accounts: string[]) => {
       console.log("MetaMask accounts changed (login form):", accounts)
       if (accounts.length === 0) {
-        setError("MetaMask not connected or locked. Please select an account in MetaMask.")
+        setError(
+          t("language") === "zh"
+            ? "MetaMask未连接或已锁定。请在MetaMask中选择一个账户。"
+            : "MetaMask not connected or locked. Please select an account in MetaMask.",
+        )
         setAddress(null)
         setIsSigning(false)
       } else {
@@ -86,7 +90,7 @@ export default function LoginForm() {
         ethereum.removeListener("accountsChanged", handleAccountsChanged)
       }
     }
-  }, [])
+  }, [address, t])
 
   // 连接 MetaMask
   const connectWallet = async () => {
@@ -99,11 +103,19 @@ export default function LoginForm() {
 
       // 检查是否安装了 MetaMask
       if (!checkIfMetaMaskInstalled()) {
-        throw new Error("Please install MetaMask wallet. You can download it from https://metamask.io")
+        throw new Error(
+          t("language") === "zh"
+            ? "请安装 MetaMask 钱包后再试。您可以从 https://metamask.io 下载。"
+            : "Please install MetaMask wallet. You can download it from https://metamask.io",
+        )
       }
 
       if (!window.ethereum) {
-        throw new Error("MetaMask not detected. Please make sure it's installed and enabled.")
+        throw new Error(
+          t("language") === "zh"
+            ? "未检测到 MetaMask，请确保已安装并启用。"
+            : "MetaMask not detected. Please make sure it's installed and enabled.",
+        )
       }
 
       // 请求连接账户
@@ -112,7 +124,11 @@ export default function LoginForm() {
       })
 
       if (!accounts || accounts.length === 0) {
-        throw new Error("Unable to get wallet address. Please make sure MetaMask is unlocked and authorized.")
+        throw new Error(
+          t("language") === "zh"
+            ? "未能获取钱包地址，请确保 MetaMask 已解锁并授权连接。"
+            : "Unable to get wallet address. Please make sure MetaMask is unlocked and authorized.",
+        )
       }
 
       const walletAddress = accounts[0]
@@ -122,12 +138,16 @@ export default function LoginForm() {
       await handleSignMessage(walletAddress)
     } catch (error: any) {
       console.error("Wallet connection error:", error)
-      let errorMessage = "Failed to connect wallet. Please try again."
+      let errorMessage =
+        t("language") === "zh" ? "连接钱包失败，请重试。" : "Failed to connect wallet. Please try again."
 
       if (error.code === 4001) {
-        errorMessage = "User rejected the connection request."
+        errorMessage = t("language") === "zh" ? "用户拒绝了连接请求。" : "User rejected the connection request."
       } else if (error.code === -32002) {
-        errorMessage = "MetaMask connection request is already pending. Please check MetaMask popup."
+        errorMessage =
+          t("language") === "zh"
+            ? "MetaMask 连接请求已在处理中，请检查 MetaMask 弹窗。"
+            : "MetaMask connection request is already pending. Please check MetaMask popup."
       } else if (error.message) {
         errorMessage = error.message
       }
@@ -165,7 +185,10 @@ export default function LoginForm() {
       })
 
       // 创建要签名的消息
-      const message = `Please sign this message to verify your identity:\n\nNonce: ${nonce}\n\nThis operation will not incur any fees.`
+      const message =
+        t("language") === "zh"
+          ? `请签名此消息以验证您的身份：\n\n随机码: ${nonce}\n\n此操作不会产生任何费用。`
+          : `Please sign this message to verify your identity:\n\nNonce: ${nonce}\n\nThis operation will not incur any fees.`
 
       // 请求签名
       const signature = await window.ethereum!.request({
@@ -174,7 +197,7 @@ export default function LoginForm() {
       })
 
       if (!signature) {
-        throw new Error("No signature received.")
+        throw new Error(t("language") === "zh" ? "未获取到签名。" : "No signature received.")
       }
 
       // 验证签名并登录
@@ -185,10 +208,10 @@ export default function LoginForm() {
       }
     } catch (error: any) {
       console.error("Signing error details:", error)
-      let errorMessage = "Error occurred during signing process."
+      let errorMessage = t("language") === "zh" ? "签名过程中发生错误。" : "Error occurred during signing process."
 
       if (error.code === 4001) {
-        errorMessage = "User rejected the signing request."
+        errorMessage = t("language") === "zh" ? "用户拒绝了签名请求。" : "User rejected the signing request."
       } else if (error.message) {
         errorMessage = error.message
       }
@@ -217,7 +240,9 @@ export default function LoginForm() {
 
   const displayAddress = address
     ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}`
-    : "Not connected"
+    : t("language") === "zh"
+      ? "未连接"
+      : "Not connected"
   const isLoading = isConnecting || isSigning || authLoading
 
   return (
@@ -274,7 +299,7 @@ export default function LoginForm() {
                   onClick={disconnectWallet}
                   className="w-full border-yellow-500 text-yellow-600 hover:bg-yellow-50 text-lg font-semibold py-4 rounded-xl transition-all duration-300 ease-in-out"
                 >
-                  {t("disconnectWallet")}
+                  {t("language") === "zh" ? "断开连接" : "Disconnect"}
                 </Button>
               </div>
             </>
@@ -286,7 +311,7 @@ export default function LoginForm() {
                 disabled={metamaskDetected === false}
               >
                 <Wallet className="mr-3 h-6 w-6" />
-                {t("connectWallet")}
+                {t("language") === "zh" ? "连接加密钱包" : "Connect Crypto Wallet"}
               </Button>
             </>
           )}

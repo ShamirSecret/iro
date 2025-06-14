@@ -75,6 +75,35 @@ export interface Translations {
   invalidWalletAddress: string
   registrationFailed: string
   fetchDataFailed: string
+
+  // Registration form specific
+  captainRegistrationNote: string
+  crewRegistrationNote: string
+  captainRegistrationDesc: string
+  crewRegistrationDesc: string
+  walletAddressForRewards: string
+  connectWalletToGetAddress: string
+  walletConnected: string
+  pleaseEnterValidEmail: string
+  usernameValidation: string
+  emailValidation: string
+  registrationInProgress: string
+  alreadyHaveAccount: string
+  loginHere: string
+  tipConnectWallet: string
+  downloadWalletTip: string
+  becomeCaptain: string
+  becomeCrew: string
+
+  // Login form specific
+  connectWalletToLogin: string
+  connectWalletDesc: string
+  getNonce: string
+  gettingNonce: string
+  signAndLogin: string
+  signingIn: string
+  noAccount: string
+  registerNow: string
 }
 
 export const translations: Record<Language, Translations> = {
@@ -153,6 +182,36 @@ export const translations: Record<Language, Translations> = {
     invalidWalletAddress: "Invalid wallet address",
     registrationFailed: "Registration failed",
     fetchDataFailed: "Failed to fetch data",
+
+    // Registration form specific
+    captainRegistrationNote: "Captain registration requires admin approval before use",
+    crewRegistrationNote: "Crew registration is available immediately after invitation code verification",
+    captainRegistrationDesc: "Fill in your information to apply to become a captain, pending admin approval.",
+    crewRegistrationDesc: "Fill in your information and provide invitation code to join the team.",
+    walletAddressForRewards: "Wallet Address (for receiving rewards)",
+    connectWalletToGetAddress: "Connect",
+    walletConnected: "Wallet connected",
+    pleaseEnterValidEmail: "Please enter a valid email address",
+    usernameValidation: "Username must be 3-20 characters, letters and numbers only",
+    emailValidation: "Please enter a valid email address, max 50 characters",
+    registrationInProgress: "Submitting...",
+    alreadyHaveAccount: "Already have an account?",
+    loginHere: "Login here",
+    tipConnectWallet:
+      "💡 Tip: You can manually enter wallet address or click 'Connect' to get it from your crypto wallet",
+    downloadWalletTip: "If you don't have a crypto wallet installed, visit",
+    becomeCaptain: "Become Captain",
+    becomeCrew: "Become Crew",
+
+    // Login form specific
+    connectWalletToLogin: "Connect Wallet to Login",
+    connectWalletDesc: "Please connect your crypto wallet for authentication",
+    getNonce: "Get Nonce",
+    gettingNonce: "Getting Nonce...",
+    signAndLogin: "Sign & Login",
+    signingIn: "Signing In...",
+    noAccount: "Don't have an account?",
+    registerNow: "Register Now",
   },
   zh: {
     // Navigation
@@ -229,6 +288,36 @@ export const translations: Record<Language, Translations> = {
     invalidWalletAddress: "无效的钱包地址",
     registrationFailed: "注册失败",
     fetchDataFailed: "获取数据失败",
+
+    // Registration form specific
+    captainRegistrationNote: "船长注册需要管理员审核通过后才能使用",
+    crewRegistrationNote: "船员注册通过邀请码验证后即可直接使用",
+    captainRegistrationDesc: "填写您的信息申请成为船长，需要等待管理员审核。",
+    crewRegistrationDesc: "填写您的信息并提供邀请码加入团队。",
+    walletAddressForRewards: "钱包地址 (用于接收奖励)",
+    connectWalletToGetAddress: "连接",
+    disconnectWallet: "断开",
+    walletConnected: "钱包已连接",
+    pleaseEnterValidEmail: "请输入有效的邮箱地址",
+    usernameValidation: "用户名只能由3-20位字母和数字组成",
+    emailValidation: "请输入有效的邮箱地址，且长度不超过50个字符",
+    registrationInProgress: "提交中...",
+    alreadyHaveAccount: "已有账户？",
+    loginHere: "在此登录",
+    tipConnectWallet: '💡 提示：您可以手动输入钱包地址，或点击"连接"按钮从加密钱包自动获取',
+    downloadWalletTip: "如果没有安装加密钱包插件，可访问",
+    becomeCaptain: "成为船长",
+    becomeCrew: "成为船员",
+
+    // Login form specific
+    connectWalletToLogin: "连接钱包登录",
+    connectWalletDesc: "请连接您的加密钱包进行身份验证",
+    getNonce: "获取随机数",
+    gettingNonce: "获取随机数中...",
+    signAndLogin: "签名并登录",
+    signingIn: "登录中...",
+    noAccount: "还没有账户？",
+    registerNow: "立即注册",
   },
 }
 

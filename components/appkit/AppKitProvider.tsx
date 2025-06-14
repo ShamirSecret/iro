@@ -56,4 +56,4 @@ export function AppKitProvider({ children }: { children: ReactNode }) {
       </QueryClientProvider>
     </WagmiProvider>
   )
-} 
+}

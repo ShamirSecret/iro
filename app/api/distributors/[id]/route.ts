@@ -47,4 +47,4 @@ export async function DELETE(
   // 删除分销商
   await deleteDistributor(id)
   return NextResponse.json({ message: "Distributor deleted successfully" })
-} 
+}

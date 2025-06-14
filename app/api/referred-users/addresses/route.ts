@@ -29,4 +29,4 @@ export async function GET(request: Request) {
     console.error("获取推荐用户地址时出错：", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-} 
+}

@@ -29,8 +29,36 @@ export interface Translations {
   fullName: string
   emailAddress: string
   walletAddress: string
+  walletAddressForRewards: string
   referralCode: string
+  invitationCode: string
   submitRegistration: string
+  applyCaptain: string
+  joinTeam: string
+  captainRegistrationNote: string
+  crewRegistrationNote: string
+  captainRegistrationDesc: string
+  crewRegistrationDesc: string
+
+  // Placeholders
+  enterName: string
+  enterEmail: string
+  enterReferralCode: string
+  walletPlaceholder: string
+  captainInvitationPlaceholder: string
+  crewInvitationPlaceholder: string
+
+  // Wallet
+  connect: string
+  disconnect: string
+  walletObtained: string
+  connectWalletTip: string
+  noWalletTip: string
+
+  // Messages
+  alreadyHaveAccount: string
+  loginHere: string
+  submitting: string
 
   // Dashboard
   welcome: string
@@ -46,11 +74,6 @@ export interface Translations {
   loading: string
   success: string
   failed: string
-
-  // Placeholders
-  enterName: string
-  enterEmail: string
-  enterReferralCode: string
 
   // Buttons
   submit: string
@@ -93,8 +116,37 @@ const translations: Record<Language, Translations> = {
     fullName: "Full Name",
     emailAddress: "Email Address",
     walletAddress: "Wallet Address",
+    walletAddressForRewards: "Wallet Address (for receiving rewards)",
     referralCode: "Referral Code",
+    invitationCode: "Invitation Code (Optional, leave blank to register as captain)",
     submitRegistration: "Submit Registration",
+    applyCaptain: "Apply to Become Captain",
+    joinTeam: "Join Team",
+    captainRegistrationNote: "Captain registration requires admin approval before use",
+    crewRegistrationNote: "Crew registration can be used directly after invitation code verification",
+    captainRegistrationDesc: "Fill in your information to apply to become a captain, awaiting admin approval.",
+    crewRegistrationDesc: "Fill in your information and provide invitation code to join the team.",
+
+    // Placeholders
+    enterName: "Enter your full name",
+    enterEmail: "Enter your email address",
+    enterReferralCode: "Enter referral code",
+    walletPlaceholder: "0x... or click the button on the right to connect crypto wallet",
+    captainInvitationPlaceholder: "Leave blank to register as captain, fill to register as crew",
+    crewInvitationPlaceholder: "Enter the inviter's invitation code",
+
+    // Wallet
+    connect: "Connect",
+    disconnect: "Disconnect",
+    walletObtained: "✓ Wallet address obtained:",
+    connectWalletTip:
+      "💡 Tip: You can manually enter wallet address, or click 'Connect' button to automatically get from crypto wallet",
+    noWalletTip: "If you haven't installed crypto wallet plugin, you can visit",
+
+    // Messages
+    alreadyHaveAccount: "Already have an account?",
+    loginHere: "Login here",
+    submitting: "Submitting...",
 
     // Dashboard
     welcome: "Welcome",
@@ -110,11 +162,6 @@ const translations: Record<Language, Translations> = {
     loading: "Loading...",
     success: "Success",
     failed: "Failed",
-
-    // Placeholders
-    enterName: "Enter your full name",
-    enterEmail: "Enter your email address",
-    enterReferralCode: "Enter referral code",
 
     // Buttons
     submit: "Submit",
@@ -155,8 +202,36 @@ const translations: Record<Language, Translations> = {
     fullName: "姓名",
     emailAddress: "邮箱地址",
     walletAddress: "钱包地址",
+    walletAddressForRewards: "钱包地址 (用于接收奖励)",
     referralCode: "推荐码",
+    invitationCode: "邀请码 (可选，不填则注册船长)",
     submitRegistration: "提交注册",
+    applyCaptain: "申请成为船长",
+    joinTeam: "加入团队",
+    captainRegistrationNote: "船长注册需要管理员审核通过后才能使用",
+    crewRegistrationNote: "船员注册通过邀请码验证后即可直接使用",
+    captainRegistrationDesc: "填写您的信息申请成为船长，需要等待管理员审核。",
+    crewRegistrationDesc: "填写您的信息并提供邀请码加入团队。",
+
+    // Placeholders
+    enterName: "请输入您的姓名",
+    enterEmail: "请输入您的邮箱地址",
+    enterReferralCode: "请输入推荐码",
+    walletPlaceholder: "0x... 或点击右侧按钮连接加密钱包",
+    captainInvitationPlaceholder: "留空注册船长，填写则注册船员",
+    crewInvitationPlaceholder: "请输入邀请人的邀请码",
+
+    // Wallet
+    connect: "连接",
+    disconnect: "断开",
+    walletObtained: "✓ 已获取钱包地址:",
+    connectWalletTip: "💡 提示：您可以手动输入钱包地址，或点击'连接'按钮从加密钱包自动获取",
+    noWalletTip: "如果没有安装加密钱包插件，可访问",
+
+    // Messages
+    alreadyHaveAccount: "已有账户？",
+    loginHere: "在此登录",
+    submitting: "提交中...",
 
     // Dashboard
     welcome: "欢迎",
@@ -172,11 +247,6 @@ const translations: Record<Language, Translations> = {
     loading: "加载中...",
     success: "成功",
     failed: "失败",
-
-    // Placeholders
-    enterName: "请输入您的姓名",
-    enterEmail: "请输入您的邮箱地址",
-    enterReferralCode: "请输入推荐码",
 
     // Buttons
     submit: "提交",

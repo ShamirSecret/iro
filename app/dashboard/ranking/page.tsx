@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/app/providers"
+import { useAuth, useLanguage } from "@/app/providers"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart3, Trophy, Loader2 } from "lucide-react"
@@ -13,6 +13,7 @@ const safeToLocaleString = (value: number | null | undefined): string => {
 
 export default function RankingPage() {
   const { allDistributorsData, isLoading: authIsLoading, currentUser } = useAuth()
+  const { language } = useLanguage()
 
   // Filter and sort for display on the ranking page (approved distributors, sorted by rank)
   const rankedDisplayList = (allDistributorsData || [])
@@ -22,62 +23,62 @@ export default function RankingPage() {
   if (authIsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
-        <Loader2 className="h-12 w-12 animate-spin text-picwe-yellow" />
+        <Loader2 className="h-12 w-12 animate-spin text-yellow-500" />
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-picwe-yellow">船员排行榜</h1>
-      <Card className="bg-picwe-darkGray rounded-xl shadow-xl border-gray-700/50">
-        <CardHeader className="p-5 border-b border-gray-700/50">
+      <h1 className="text-3xl font-bold text-yellow-500">{language === "zh" ? "船员排行榜" : "Member Leaderboard"}</h1>
+      <Card className="bg-gray-800 rounded-xl shadow-xl border-gray-700">
+        <CardHeader className="p-5 border-b border-gray-700">
           <CardTitle className="text-lg font-semibold text-white flex items-center">
-            <BarChart3 className="mr-2.5 h-5 w-5 text-picwe-yellow" />
-            排行榜
+            <BarChart3 className="mr-2.5 h-5 w-5 text-yellow-500" />
+            {language === "zh" ? "排行榜" : "Leaderboard"}
           </CardTitle>
-          <CardDescription className="text-sm text-picwe-lightGrayText mt-1">
-            根据总积分对船员进行排名。
+          <CardDescription className="text-sm text-gray-400 mt-1">
+            {language === "zh" ? "根据总积分对船员进行排名。" : "Members ranked by total points."}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {rankedDisplayList.length > 0 ? (
             <Table>
               <TableHeader>
-                <TableRow className="border-b-gray-700/50">
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider w-[80px]">
-                    排名
+                <TableRow className="border-b-gray-700">
+                  <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider w-[80px]">
+                    {language === "zh" ? "排名" : "Rank"}
                   </TableHead>
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    船员名称
+                  <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    {language === "zh" ? "船员名称" : "Member Name"}
                   </TableHead>
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-right">
-                    总积分
+                  <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">
+                    {language === "zh" ? "总积分" : "Total Points"}
                   </TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className="divide-y divide-gray-700/50">
+              <TableBody className="divide-y divide-gray-700">
                 {rankedDisplayList.map((distributor, index) => {
                   if (!distributor || !distributor.id) return null
 
                   return (
                     <TableRow
                       key={distributor.id}
-                      className={`hover:bg-gray-700/30 ${currentUser?.id === distributor.id ? "bg-picwe-yellow/10" : ""}`}
+                      className={`hover:bg-gray-700/30 ${currentUser?.id === distributor.id ? "bg-yellow-500/10" : ""}`}
                     >
-                      <TableCell className="px-5 py-3 font-semibold text-xl text-picwe-yellow">
+                      <TableCell className="px-5 py-3 font-semibold text-xl text-yellow-500">
                         {distributor.rank === 1 && <Trophy className="inline-block h-5 w-5 mr-1 text-yellow-400" />}
                         {distributor.rank === 2 && <Trophy className="inline-block h-5 w-5 mr-1 text-slate-400" />}
                         {distributor.rank === 3 && <Trophy className="inline-block h-5 w-5 mr-1 text-yellow-700" />}
                         {distributor.rank || "N/A"}
                       </TableCell>
                       <TableCell
-                        className={`px-5 py-3 font-medium ${currentUser?.id === distributor.id ? "text-picwe-yellow" : "text-white"}`}
+                        className={`px-5 py-3 font-medium ${currentUser?.id === distributor.id ? "text-yellow-500" : "text-white"}`}
                       >
-                        {distributor.name || "未知用户"}
+                        {distributor.name || (language === "zh" ? "未知用户" : "Unknown User")}
                       </TableCell>
                       <TableCell
-                        className={`px-5 py-3 text-right font-semibold ${currentUser?.id === distributor.id ? "text-picwe-yellow" : "text-white"}`}
+                        className={`px-5 py-3 text-right font-semibold ${currentUser?.id === distributor.id ? "text-yellow-500" : "text-white"}`}
                       >
                         {safeToLocaleString(distributor.totalPoints)}
                       </TableCell>
@@ -89,7 +90,9 @@ export default function RankingPage() {
           ) : (
             <div className="text-center py-12">
               <BarChart3 className="h-10 w-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-picwe-lightGrayText">排行榜上暂无船员数据。</p>
+              <p className="text-gray-400">
+                {language === "zh" ? "排行榜上暂无船员数据。" : "No member data available on the leaderboard."}
+              </p>
             </div>
           )}
         </CardContent>

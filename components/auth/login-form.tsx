@@ -166,29 +166,29 @@ export default function LoginForm() {
     setError(null)
 
     try {
-      const startTime = Date.now()
+      console.log("Starting sign message process for address:", walletAddress)
 
       // 获取 nonce
       const nonceRes = await fetch("/api/auth/nonce")
-      const nonceReceivedTime = Date.now()
-      const { nonce } = await nonceRes.json()
+      if (!nonceRes.ok) {
+        throw new Error(`Failed to get nonce: ${nonceRes.status} ${nonceRes.statusText}`)
+      }
 
-      // 解析 nonce 中的时间戳
-      const [timestampStr] = nonce.split("-")
-      const generatedTime = Number.parseInt(timestampStr, 10)
+      const nonceData = await nonceRes.json()
+      const { nonce } = nonceData
 
-      console.log("Nonce timeline:", {
-        generatedTime: new Date(generatedTime).toISOString(),
-        receivedTime: new Date(nonceReceivedTime).toISOString(),
-        timeDiff: `${nonceReceivedTime - generatedTime}ms`,
-        currentTime: new Date().toISOString(),
-      })
+      if (!nonce) {
+        throw new Error("No nonce received from server")
+      }
 
-      // 创建要签名的消息
-      const message =
-        t("language") === "zh"
-          ? `请签名此消息以验证您的身份：\n\n随机码: ${nonce}\n\n此操作不会产生任何费用。`
-          : `Please sign this message to verify your identity:\n\nNonce: ${nonce}\n\nThis operation will not incur any fees.`
+      console.log("Received nonce:", nonce)
+
+      // 创建要签名的消息 - 使用与服务器端完全相同的格式
+      const message = `请签名此消息以验证您的身份：\n\n随机码: ${nonce}\n\n此操作不会产生任何费用。`
+
+      console.log("Message to sign:", message)
+      console.log("Message length:", message.length)
+      console.log("Message bytes:", new TextEncoder().encode(message))
 
       // 请求签名
       const signature = await window.ethereum!.request({
@@ -200,12 +200,18 @@ export default function LoginForm() {
         throw new Error(t("language") === "zh" ? "未获取到签名。" : "No signature received.")
       }
 
+      console.log("Signature received:", signature.substring(0, 20) + "...")
+
       // 验证签名并登录
+      console.log("Calling loginWithWallet...")
       const loginResult = await loginWithWallet(walletAddress, nonce, signature)
+      console.log("Login result:", loginResult)
 
       if (!loginResult.success) {
-        throw new Error(loginResult.message)
+        throw new Error(loginResult.message || "Login failed")
       }
+
+      console.log("Login successful!")
     } catch (error: any) {
       console.error("Signing error details:", error)
       let errorMessage = t("language") === "zh" ? "签名过程中发生错误。" : "Error occurred during signing process."
@@ -230,12 +236,6 @@ export default function LoginForm() {
     setError(null)
     setIsSigning(false)
     setIsConnecting(false)
-
-    // 清除任何可能的缓存状态
-    if (typeof window !== "undefined") {
-      // 不清除 localStorage 中的登录状态，只清除当前连接状态
-      console.log("Wallet connection disconnected")
-    }
   }
 
   const displayAddress = address

@@ -1,25 +1,29 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Globe } from "lucide-react"
 import { useLanguage } from "@/app/providers"
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Globe } from "lucide-react"
 
 export default function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage()
 
-  const toggleLanguage = () => {
-    setLanguage(language === "en" ? "zh" : "en")
-  }
-
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={toggleLanguage}
-      className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
-    >
-      <Globe className="h-4 w-4" />
-      <span className="text-sm font-medium">{language === "en" ? "中文" : "EN"}</span>
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Globe className="h-4 w-4" />
+          {language === "zh" ? "中文" : "English"}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setLanguage("en")} className={language === "en" ? "bg-gray-100" : ""}>
+          English
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setLanguage("zh")} className={language === "zh" ? "bg-gray-100" : ""}>
+          中文
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

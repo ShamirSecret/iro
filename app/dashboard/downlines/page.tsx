@@ -1,12 +1,10 @@
 "use client"
 
-import { useAuth } from "@/app/providers"
+import { useAuth, useLanguage } from "@/app/providers"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Users, ArrowDownCircle, TrendingUp, PlusCircle } from "lucide-react"
+import { Users, ArrowDownCircle, TrendingUp } from "lucide-react"
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 
 // 安全的数字格式化函数
 const safeToLocaleString = (value: number | null | undefined): string => {
@@ -15,102 +13,67 @@ const safeToLocaleString = (value: number | null | undefined): string => {
 }
 
 export default function DownlinesPage() {
-  const {
-    currentUser,
-    getDownlineDetails,
-    addPointsToDistributor,
-    isLoading: authLoading,
-    allDistributorsData,
-  } = useAuth()
+  const { currentUser, getDownlineDetails, isLoading: authLoading, allDistributorsData } = useAuth()
+  const { language } = useLanguage()
   const [downlines, setDownlines] = useState<any[]>([])
-  const [pointInputs, setPointInputs] = useState<Record<string, string>>({}) // For point input fields
-
-  const handleAddPoints = (distributorId: string) => {
-    const pointsToAdd = Number.parseInt(pointInputs[distributorId] || "0", 10)
-    if (pointsToAdd > 0) {
-      // 找到下级的钱包地址
-      const distributor = allDistributorsData.find((d) => d.id === distributorId)
-      if (distributor && distributor.id) {
-        addPointsToDistributor(distributor.id, pointsToAdd, true)
-      } else {
-        alert("未找到该下级的信息，无法加分。")
-        return
-      }
-      setPointInputs((prev) => ({ ...prev, [distributorId]: "" })) // Clear input
-      // Data will re-render via useEffect listening to allDistributorsData
-    } else {
-      alert("请输入有效的积分数量。")
-    }
-  }
-
-  const handlePointInputChange = (distributorId: string, value: string) => {
-    setPointInputs((prev) => ({ ...prev, [distributorId]: value }))
-  }
 
   useEffect(() => {
     if (currentUser && currentUser.id) {
       const details = getDownlineDetails(currentUser.id)
       setDownlines(details || [])
     }
-  }, [currentUser, getDownlineDetails, allDistributorsData]) // Listen to allDistributorsData for re-renders on point changes
-
-  // Re-fetch downline details if currentUser or allDistributorsData changed, ensuring UI updates
-  useEffect(() => {
-    if (currentUser && currentUser.id) {
-      const freshDownlines = getDownlineDetails(currentUser.id)
-      // Check if downlines actually changed to prevent infinite loops if getDownlineDetails isn't memoized correctly
-      if (JSON.stringify(freshDownlines) !== JSON.stringify(downlines)) {
-        setDownlines(freshDownlines || [])
-      }
-    }
-  }, [currentUser, allDistributorsData, getDownlineDetails, downlines])
+  }, [currentUser, getDownlineDetails, allDistributorsData])
 
   if (authLoading || !currentUser) {
-    return <div className="text-center p-10">加载中...</div>
+    return (
+      <div className="text-center p-10">
+        <p className="text-gray-400">{language === "zh" ? "加载中..." : "Loading..."}</p>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-white">我的船队</h1>
-      <Card className="bg-picwe-darkGray rounded-xl shadow-xl border-gray-700/50">
-        <CardHeader className="p-5 border-b border-gray-700/50">
+      <h1 className="text-2xl font-semibold text-white">{language === "zh" ? "我的船队" : "My Fleet"}</h1>
+      <Card className="bg-gray-800 rounded-xl shadow-xl border-gray-700">
+        <CardHeader className="p-5 border-b border-gray-700">
           <CardTitle className="text-lg font-semibold text-white flex items-center">
-            <Users className="mr-2.5 h-5 w-5 text-picwe-yellow" />
-            直接下级船员 ({downlines.length})
+            <Users className="mr-2.5 h-5 w-5 text-yellow-500" />
+            {language === "zh" ? `直接下级船员 (${downlines.length})` : `Direct Team Members (${downlines.length})`}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {downlines.length > 0 ? (
             <Table>
               <TableHeader>
-                <TableRow className="border-b-gray-700/50">
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    名称
+                <TableRow className="border-b-gray-700">
+                  <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    {language === "zh" ? "名称" : "Name"}
                   </TableHead>
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    总积分
+                  <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    {language === "zh" ? "总积分" : "Total Points"}
                   </TableHead>
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    直接积分
+                  <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    {language === "zh" ? "直接积分" : "Personal Points"}
                   </TableHead>
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    佣金积分
+                  <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    {language === "zh" ? "佣金积分" : "Commission Points"}
                   </TableHead>
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-center">
-                    下级数量
+                  <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider text-center">
+                    {language === "zh" ? "下级数量" : "Team Size"}
                   </TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className="divide-y divide-gray-700/50">
+              <TableBody className="divide-y divide-gray-700">
                 {downlines.map((d) => {
                   if (!d || !d.id) return null
 
                   return (
                     <TableRow key={d.id} className="hover:bg-gray-700/30">
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
-                        {d.name || "未知船员"}
+                        {d.name || (language === "zh" ? "未知船员" : "Unknown Member")}
                       </TableCell>
-                      <TableCell className="px-5 py-3 text-sm text-picwe-yellow font-semibold whitespace-nowrap">
+                      <TableCell className="px-5 py-3 text-sm text-yellow-500 font-semibold whitespace-nowrap">
                         {safeToLocaleString(d.totalPoints)}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
@@ -130,19 +93,23 @@ export default function DownlinesPage() {
           ) : (
             <div className="text-center py-12">
               <ArrowDownCircle className="h-10 w-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-picwe-lightGrayText">您目前还没有直接下级船员。</p>
-              <p className="text-xs text-gray-500 mt-1">分享您的邀请码以发展船队！</p>
+              <p className="text-gray-400">
+                {language === "zh" ? "您目前还没有直接下级船员。" : "You don't have any direct team members yet."}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {language === "zh" ? "分享您的邀请码以发展船队！" : "Share your referral code to build your team!"}
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
 
       {currentUser.uplineDistributorId && (
-        <Card className="bg-picwe-darkGray rounded-xl shadow-xl border-gray-700/50 mt-6">
+        <Card className="bg-gray-800 rounded-xl shadow-xl border-gray-700 mt-6">
           <CardHeader className="p-5">
             <CardTitle className="text-lg font-semibold text-white flex items-center">
-              <TrendingUp className="mr-2.5 h-5 w-5 text-picwe-yellow" />
-              我的上级船长
+              <TrendingUp className="mr-2.5 h-5 w-5 text-yellow-500" />
+              {language === "zh" ? "我的上级船长" : "My Upline Captain"}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-5">
@@ -150,21 +117,39 @@ export default function DownlinesPage() {
               const upline = allDistributorsData.find((d) => d && d.id === currentUser.uplineDistributorId)
               return upline ? (
                 <div className="space-y-1">
-                  <p className="text-sm text-picwe-lightGrayText">
-                    名称: <span className="text-white font-medium">{upline.name || "未知"}</span>
-                  </p>
-                  <p className="text-sm text-picwe-lightGrayText">
-                    类型: {" "}
+                  <p className="text-sm text-gray-400">
+                    {language === "zh" ? "名称: " : "Name: "}
                     <span className="text-white font-medium">
-                      {upline.roleType === "captain" ? "船长" : upline.roleType === "crew" ? "船员" : "未知"}
+                      {upline.name || (language === "zh" ? "未知" : "Unknown")}
                     </span>
                   </p>
-                  <p className="text-sm text-picwe-lightGrayText">
-                    联系邮箱: <span className="text-white font-medium">{upline.email || "未设置"}</span>
+                  <p className="text-sm text-gray-400">
+                    {language === "zh" ? "类型: " : "Type: "}
+                    <span className="text-white font-medium">
+                      {upline.roleType === "captain"
+                        ? language === "zh"
+                          ? "船长"
+                          : "Captain"
+                        : upline.roleType === "crew"
+                          ? language === "zh"
+                            ? "船员"
+                            : "Crew"
+                          : language === "zh"
+                            ? "未知"
+                            : "Unknown"}
+                    </span>
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    {language === "zh" ? "联系邮箱: " : "Contact Email: "}
+                    <span className="text-white font-medium">
+                      {upline.email || (language === "zh" ? "未设置" : "Not set")}
+                    </span>
                   </p>
                 </div>
               ) : (
-                <p className="text-picwe-lightGrayText">上级船长信息未找到。</p>
+                <p className="text-gray-400">
+                  {language === "zh" ? "上级船长信息未找到。" : "Upline captain information not found."}
+                </p>
               )
             })()}
           </CardContent>

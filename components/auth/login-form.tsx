@@ -20,7 +20,7 @@ declare global {
 }
 
 export default function LoginForm() {
-  const { loginWithWallet, isLoading: authLoading } = useAuth()
+  const { loginWithWallet, isLoading: authLoading, logout } = useAuth()
   const { t } = useLanguage()
   const [isConnecting, setIsConnecting] = useState(false)
   const [isSigning, setIsSigning] = useState(false)
@@ -90,7 +90,7 @@ export default function LoginForm() {
         ethereum.removeListener("accountsChanged", handleAccountsChanged)
       }
     }
-  }, [address, t])
+  }, [t])
 
   // 连接 MetaMask
   const connectWallet = async () => {
@@ -239,6 +239,8 @@ export default function LoginForm() {
       setError(null)
       setIsSigning(false)
       setIsConnecting(false)
+      // 调用 logout 清除认证信息并重定向
+      logout()
 
       // 清除localStorage中的认证信息
       if (typeof window !== "undefined") {

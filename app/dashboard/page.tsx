@@ -94,7 +94,7 @@ export default function DashboardPage() {
     icon: Icon,
     yellowValue = false,
   }: { title: string; value: string | number; icon: React.ElementType; yellowValue?: boolean }) => (
-    <div className="bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
+    <div className="bg-gray-800 p-4 rounded-xl shadow-lg border-none">
       <div className="flex items-center justify-between mb-1">
         <p className="text-xs text-gray-400">{title}</p>
         <Icon className="h-4 w-4 text-yellow-500" />
@@ -121,8 +121,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: User Info & Referral Code */}
         <div className="lg:col-span-1 space-y-6">
-          <Card className="bg-gray-800 rounded-xl shadow-xl border-gray-700">
-            <CardHeader className="border-b border-gray-700 p-4">
+          <Card className="bg-gray-800 rounded-xl shadow-xl border-none">
+            <CardHeader className="p-4">
               <CardTitle className="text-md font-semibold text-white flex items-center">
                 <Wallet className="h-5 w-5 mr-2 text-yellow-500" />
                 {language === "zh" ? "钱包信息" : "Wallet Information"}
@@ -142,8 +142,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800 rounded-xl shadow-xl border-gray-700">
-            <CardHeader className="border-b border-gray-700 p-4">
+          <Card className="bg-gray-800 rounded-xl shadow-xl border-none">
+            <CardHeader className="p-4">
               <CardTitle className="text-md font-semibold text-white flex items-center">
                 <Mail className="h-5 w-5 mr-2 text-yellow-500" />
                 {language === "zh" ? "联系方式" : "Contact Information"}
@@ -159,8 +159,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800 rounded-xl shadow-xl border-gray-700">
-            <CardHeader className="border-b border-gray-700 p-4">
+          <Card className="bg-gray-800 rounded-xl shadow-xl border-none">
+            <CardHeader className="p-4">
               <CardTitle className="text-md font-semibold text-white flex items-center">
                 <Gift className="h-5 w-5 mr-2 text-yellow-500" />
                 {language === "zh" ? "我的推荐码" : "My Referral Code"}
@@ -226,8 +226,8 @@ export default function DashboardPage() {
             />
           </div>
 
-          <Card className="bg-gray-800 rounded-xl shadow-xl border-gray-700">
-            <CardHeader className="border-b border-gray-700 p-4">
+          <Card className="bg-gray-800 rounded-xl shadow-xl border-none">
+            <CardHeader className="p-4">
               <CardTitle className="text-md font-semibold text-white">
                 {language === "zh" ? "我的团队成员" : "My Team Members"}
               </CardTitle>

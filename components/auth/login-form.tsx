@@ -246,22 +246,27 @@ export default function LoginForm() {
   const isLoading = isConnecting || isSigning || authLoading
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6 relative overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-6 relative overflow-hidden">
+      {/* Background gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 opacity-50"></div>
+
       {/* Language Switcher */}
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 z-20">
         <LanguageSwitcher />
       </div>
 
       <div className="z-10 flex flex-col items-center text-center max-w-md w-full">
         <Link href="/" className="mb-12 flex items-center space-x-3">
-          <img src="/logo.jpg" alt="PicWe Invest Logo" className="h-10 w-10 rounded-lg" />
+          <div className="bg-yellow-500 p-2 rounded-lg">
+            <img src="/logo.jpg" alt="PicWe Invest Logo" className="h-8 w-8 rounded" />
+          </div>
           <span className="text-4xl font-bold text-yellow-500">PicWe Invest</span>
         </Link>
 
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-4">
+        <h1 className="text-4xl font-extrabold text-white mb-4">
           {t("language") === "zh" ? "进入您的专属领域" : "Enter Your Exclusive Domain"}
         </h1>
-        <p className="text-lg text-gray-600 mb-10">
+        <p className="text-lg text-gray-300 mb-10">
           {t("language") === "zh"
             ? "连接您的加密钱包，开启投资之旅。"
             : "Connect your crypto wallet to start your investment journey."}
@@ -280,11 +285,11 @@ export default function LoginForm() {
             </Button>
           ) : address ? (
             <>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                <p className="text-gray-600 text-sm mb-2">
+              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow-sm">
+                <p className="text-gray-400 text-sm mb-2">
                   {t("language") === "zh" ? "已连接钱包:" : "Connected wallet:"}
                 </p>
-                <p className="font-mono text-gray-900 text-lg">{displayAddress}</p>
+                <p className="font-mono text-white text-lg">{displayAddress}</p>
               </div>
               <div className="space-y-3">
                 <Button
@@ -297,7 +302,7 @@ export default function LoginForm() {
                 <Button
                   variant="outline"
                   onClick={disconnectWallet}
-                  className="w-full border-yellow-500 text-yellow-600 hover:bg-yellow-50 text-lg font-semibold py-4 rounded-xl transition-all duration-300 ease-in-out"
+                  className="w-full border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white text-lg font-semibold py-4 rounded-xl transition-all duration-300 ease-in-out"
                 >
                   {t("language") === "zh" ? "断开连接" : "Disconnect"}
                 </Button>
@@ -317,16 +322,16 @@ export default function LoginForm() {
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600 text-sm" aria-live="polite">
+            <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
+              <p className="text-red-400 text-sm" aria-live="polite">
                 {error}
               </p>
             </div>
           )}
 
           {metamaskDetected === false && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
-              <p className="text-yellow-700 text-sm">
+            <div className="bg-yellow-900/20 border border-yellow-500/50 rounded-lg p-4 mt-4">
+              <p className="text-yellow-400 text-sm">
                 {t("language") === "zh"
                   ? "未检测到加密钱包插件。请安装钱包插件（如 MetaMask, OKX, SafePal 等）后再试。"
                   : "No crypto wallet plugin detected. Please install a wallet plugin (such as MetaMask, OKX, SafePal, etc.) and try again."}
@@ -335,7 +340,7 @@ export default function LoginForm() {
                 href="https://metamask.io/download/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-yellow-600 hover:underline text-sm mt-2 inline-block"
+                className="text-yellow-400 hover:text-yellow-300 hover:underline text-sm mt-2 inline-block"
               >
                 {t("language") === "zh" ? "了解常用钱包" : "Learn about popular wallets"}
               </a>
@@ -343,9 +348,9 @@ export default function LoginForm() {
           )}
         </div>
 
-        <p className="mt-10 text-sm text-gray-600">
+        <p className="mt-10 text-sm text-gray-400">
           {t("language") === "zh" ? "还没有账户？" : "Don't have an account?"}{" "}
-          <Link href="/register" className="font-medium text-yellow-600 hover:underline">
+          <Link href="/register" className="font-medium text-yellow-400 hover:text-yellow-300 hover:underline">
             {t("language") === "zh" ? "立即注册" : "Register now"}
           </Link>
         </p>
@@ -364,7 +369,7 @@ export default function LoginForm() {
               href="https://metamask.io"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-yellow-600 hover:underline"
+              className="text-yellow-400 hover:text-yellow-300 hover:underline"
             >
               metamask.io
             </a>

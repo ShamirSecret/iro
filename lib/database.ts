@@ -24,6 +24,7 @@ interface DbDistributor {
   total_points: number
   personal_points: number
   commission_points: number
+  team_size: number
 }
 
 interface DbReferredUser {
@@ -50,6 +51,7 @@ export interface Distributor {
   totalPoints: number
   personalPoints: number
   commissionPoints: number
+  teamSize: number
   rank?: number // Calculated dynamically
   referredUsers: ReferredUser[]
   downlineDistributors?: Distributor[] // Populated in AuthContext or specific queries
@@ -82,6 +84,7 @@ function mapDbDistributorToFrontend(
     totalPoints: Number(dbDistributor.total_points),
     personalPoints: Number(dbDistributor.personal_points),
     commissionPoints: Number(dbDistributor.commission_points),
+    teamSize: Number(dbDistributor.team_size),
   }
 }
 
@@ -106,7 +109,8 @@ export async function getAllDistributors(): Promise<Distributor[]> {
   SELECT 
     id, wallet_address, name, email, role, role_type, status,
     registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
-    referral_code, upline_distributor_id, total_points, personal_points, commission_points
+    referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+    team_size
   FROM distributors
   ORDER BY registration_timestamp DESC
 `
@@ -135,7 +139,8 @@ export async function getDistributorByWallet(walletAddress: string): Promise<Dis
   SELECT 
     id, wallet_address, name, email, role, role_type, status,
     registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
-    referral_code, upline_distributor_id, total_points, personal_points, commission_points
+    referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+    team_size
   FROM distributors WHERE wallet_address = ${walletAddress}
 `
     if (result.length === 0) return null
@@ -161,7 +166,8 @@ export async function getDistributorByReferralCode(referralCode: string): Promis
   SELECT 
     id, wallet_address, name, email, role, role_type, status,
     registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
-    referral_code, upline_distributor_id, total_points, personal_points, commission_points
+    referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+    team_size
   FROM distributors WHERE referral_code = ${referralCode}
 `
     if (result.length === 0) return null
@@ -197,7 +203,8 @@ export async function createCrew(name: string, email: string, walletAddress: str
       RETURNING 
         id, wallet_address, name, email, role, role_type, status,
         registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
-        referral_code, upline_distributor_id, total_points, personal_points, commission_points
+        referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+        team_size
     `
     // 将船员作为下线插入 referred_users
     try {
@@ -234,7 +241,8 @@ export async function createCaptain(name: string, email: string, walletAddress: 
       RETURNING 
         id, wallet_address, name, email, role, role_type, status,
         registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
-        referral_code, upline_distributor_id, total_points, personal_points, commission_points
+        referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+        team_size
     `
     // 将船长作为初始管理员的下线插入 referred_users（如果有管理员）
     try {
@@ -273,7 +281,8 @@ export async function getDownlineDistributors(distributorId: string): Promise<Di
   SELECT 
     id, wallet_address, name, email, role, role_type, status,
     registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
-    referral_code, upline_distributor_id, total_points, personal_points, commission_points
+    referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+    team_size
   FROM distributors WHERE upline_distributor_id = ${distributorId}
   ORDER BY registration_timestamp DESC
 `
@@ -712,7 +721,8 @@ export async function getDistributorById(id: string): Promise<Distributor | null
     const result: DbDistributor[] = await sql`
       SELECT id, wallet_address, name, email, role, role_type, status,
              registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
-             referral_code, upline_distributor_id, total_points, personal_points, commission_points
+             referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+             team_size
       FROM distributors WHERE id = ${id}
     `
     if (result.length === 0) return null

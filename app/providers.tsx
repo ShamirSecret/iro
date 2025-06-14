@@ -447,12 +447,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // For now, it returns direct downlines.
       // A more complex function would be needed for full hierarchy.
       const directDownlines = allDistributorsData.filter((d) => d.uplineDistributorId === distributorId)
-      // If you need to populate their 'downlineDistributors' recursively:
-      // return directDownlines.map(dd => ({
-      //   ...dd,
-      //   downlineDistributors: getDownlineDetails(dd.id) // Recursive call
-      // }));
-      return directDownlines
+      
+      // 为每个下级添加downline_distributor_ids属性，计算其下级数量
+      return directDownlines.map(downline => {
+        // 查找该下级的所有下级
+        const downlineDistributorIds = allDistributorsData
+          .filter(d => d.uplineDistributorId === downline.id)
+          .map(d => d.id);
+        
+        // 返回添加了downline_distributor_ids属性的下级
+        return {
+          ...downline,
+          downline_distributor_ids: downlineDistributorIds
+        };
+      });
     },
     [allDistributorsData],
   )

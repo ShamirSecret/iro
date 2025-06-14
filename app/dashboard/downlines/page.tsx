@@ -120,7 +120,7 @@ export default function DownlinesPage() {
                         {safeToLocaleString(d.commissionPoints)}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap text-center">
-                        {(d.downline_distributor_ids && d.downline_distributor_ids.length) || 0}
+                        {d.teamSize ?? 0}
                       </TableCell>
                     </TableRow>
                   )

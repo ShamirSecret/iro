@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/app/providers"
 import Link from "next/link"
-import { Loader2, Wallet, Zap } from "lucide-react"
+import { Loader2, Wallet } from "lucide-react"
 import { useState, useEffect } from "react"
 
 // 声明 window.ethereum 类型
@@ -222,7 +222,7 @@ export default function LoginForm() {
 
       <div className="z-10 flex flex-col items-center text-center max-w-md w-full">
         <Link href="/" className="mb-12 flex items-center space-x-3">
-          <Zap className="h-10 w-10 text-picwe-yellow" />
+          <img src="/logo.jpg" alt="Logo" className="h-10 w-10" />
           <span className="text-4xl font-bold text-picwe-yellow">PicWe</span>
         </Link>
 

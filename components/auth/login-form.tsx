@@ -229,13 +229,43 @@ export default function LoginForm() {
     }
   }
 
-  // 断开连接
-  const disconnectWallet = () => {
+  // 断开连接 - 修复断开连接功能
+  const disconnectWallet = async () => {
     console.log("Disconnecting wallet")
-    setAddress(null)
-    setError(null)
-    setIsSigning(false)
-    setIsConnecting(false)
+
+    try {
+      // 清除本地状态
+      setAddress(null)
+      setError(null)
+      setIsSigning(false)
+      setIsConnecting(false)
+
+      // 清除localStorage中的认证信息
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_token")
+        localStorage.removeItem("wallet_address")
+        localStorage.removeItem("user_data")
+      }
+
+      // 尝试断开MetaMask连接（注意：MetaMask不支持程序化断开连接）
+      // 用户需要在MetaMask中手动断开连接
+      console.log("Wallet disconnected successfully")
+
+      // 显示提示信息
+      setError(
+        t("language") === "zh"
+          ? "已断开连接。如需完全断开，请在钱包中手动断开连接。"
+          : "Disconnected. To fully disconnect, please manually disconnect in your wallet.",
+      )
+
+      // 3秒后清除提示信息
+      setTimeout(() => {
+        setError(null)
+      }, 3000)
+    } catch (error: any) {
+      console.error("Error disconnecting wallet:", error)
+      setError(t("language") === "zh" ? "断开连接时出现错误。" : "Error occurred while disconnecting.")
+    }
   }
 
   const displayAddress = address
@@ -300,7 +330,6 @@ export default function LoginForm() {
                   {t("language") === "zh" ? "重新签名登录" : "Sign to Login Again"}
                 </Button>
                 <Button
-                  variant="outline"
                   onClick={disconnectWallet}
                   className="w-full border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white text-lg font-semibold py-4 rounded-xl transition-all duration-300 ease-in-out"
                 >

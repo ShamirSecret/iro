@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     }
 
     // 重新构建消息以进行验证
-    const messageToVerify = `请签名此消息以验证您的身份：\n\n随机码: ${nonce}\n\n此操作不会产生任何费用。`
+    const messageToVerify = `Please sign this message to verify your identity:\n\nNonce: ${nonce}\n\nThis operation will not incur any fees.`
 
     let recoveredAddress
     try {

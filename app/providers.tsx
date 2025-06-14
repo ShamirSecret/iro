@@ -200,6 +200,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     rank: fetchedDistributors.find(
                       (d) => d.walletAddress.toLowerCase() === ADMIN_WALLET_ADDRESS.toLowerCase(),
                     )?.rank,
+                    teamSize: 0,
                   }
                   setCurrentUser(adminUser)
                   setIsAuthenticated(true)

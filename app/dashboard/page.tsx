@@ -234,41 +234,45 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-4">
               {downlineMembers && downlineMembers.length > 0 ? (
-                <ul className="space-y-3 max-h-80 overflow-y-auto pr-1">
-                  {downlineMembers.slice(0, 5).map((member) => {
-                    if (!member || !member.id) return null
+                <ul className="space-y-3">
+                  {downlineMembers
+                    .slice()
+                    .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
+                    .slice(0, 3)
+                    .map((member) => {
+                      if (!member || !member.id) return null
 
-                    return (
-                      <li key={member.id} className="bg-gray-900 p-3 rounded-lg shadow">
-                        <div className="flex justify-between items-center">
-                          <span
-                            className="text-sm font-medium text-white truncate"
-                            title={member.name || (language === "zh" ? "未知用户" : "Unknown user")}
-                          >
-                            {member.name || (language === "zh" ? "未知用户" : "Unknown user")}
-                          </span>
-                          <span className="text-sm font-semibold text-yellow-500">
-                            {safeToLocaleString(member.totalPoints)} {language === "zh" ? "积分" : "points"}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          {language === "zh" ? "类型: " : "Type: "}
-                          {member.roleType === "captain"
-                            ? language === "zh"
-                              ? "船长"
-                              : "Captain"
-                            : member.roleType === "crew"
+                      return (
+                        <li key={member.id} className="bg-gray-900 p-3 rounded-lg shadow">
+                          <div className="flex justify-between items-center">
+                            <span
+                              className="text-sm font-medium text-white truncate"
+                              title={member.name || (language === "zh" ? "未知用户" : "Unknown user")}
+                            >
+                              {member.name || (language === "zh" ? "未知用户" : "Unknown user")}
+                            </span>
+                            <span className="text-sm font-semibold text-yellow-500">
+                              {safeToLocaleString(member.totalPoints)} {language === "zh" ? "积分" : "points"}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            {language === "zh" ? "类型: " : "Type: "}
+                            {member.roleType === "captain"
                               ? language === "zh"
-                                ? "船员"
-                                : "Crew"
-                              : language === "zh"
-                                ? "未知"
-                                : "Unknown"}
-                        </div>
-                      </li>
-                    )
-                  })}
-                  {downlineMembers.length > 5 && (
+                                ? "船长"
+                                : "Captain"
+                              : member.roleType === "crew"
+                                ? language === "zh"
+                                  ? "船员"
+                                  : "Crew"
+                                : language === "zh"
+                                  ? "未知"
+                                  : "Unknown"}
+                          </div>
+                        </li>
+                      )
+                    })}
+                  {downlineMembers.length > 3 && (
                     <li className="text-center pt-2">
                       <Link href="/dashboard/downlines" className="text-sm text-yellow-500 hover:underline">
                         {language === "zh"

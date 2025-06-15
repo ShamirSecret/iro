@@ -1,11 +1,11 @@
 "use client"
 
-import React, { type ReactNode } from "react"
+import React, { type ReactNode, useState } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth, useLanguage } from "@/app/providers"
 import { Button } from "@/components/ui/button"
-import { Home, Users, BarChart3, LogOut, ShieldAlert, UserCircle, Copy } from "lucide-react"
+import { Home, Users, BarChart3, LogOut, ShieldAlert, UserCircle, Copy, Menu } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -20,6 +20,7 @@ import LanguageSwitcher from "@/components/language-switcher"
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { currentUser, isAuthenticated, isLoading, logout } = useAuth()
   const { t, language } = useLanguage()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
 
@@ -138,11 +139,38 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-900 text-white overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-900 text-white overflow-hidden">
       <Toaster richColors theme="dark" position="top-right" />
 
-      {/* Sidebar */}
-      <aside className="w-60 bg-gray-800 p-5 border-r border-gray-700 flex flex-col fixed h-full z-10">
+      {/* Mobile sidebar overlay */}
+      <div className={`fixed inset-0 z-30 bg-black bg-opacity-50 transition-opacity ${sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"} md:hidden`} onClick={() => setSidebarOpen(false)} />
+      {/* Mobile sidebar drawer */}
+      <aside className={`fixed inset-y-0 left-0 z-40 w-60 bg-gray-800 p-5 border-r border-gray-700 transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-200 md:hidden`}>
+        <Link href="/dashboard" className="flex items-center space-x-2.5 mb-10">
+          <img src="/logo.jpg" alt="picwe Logo" className="h-10 w-10 rounded-lg" />
+          <span className="text-2xl font-bold text-white">{language === "zh" ? "航海平台" : "picwe"}</span>
+        </Link>
+        <nav className="flex-grow space-y-1.5">
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center p-3 rounded-lg transition-colors text-sm font-medium
+                ${
+                  pathname === item.href
+                    ? "bg-yellow-500 text-black shadow-md shadow-yellow-500/20"
+                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                }`}
+            >
+              <item.icon className="mr-3 h-4.5 w-4.5" />
+              {item.name}
+            </Link>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Sidebar (hidden on small screens) */}
+      <aside className="hidden md:flex w-60 bg-gray-800 p-5 border-r border-gray-700 flex-col fixed h-full z-10">
         <Link href="/dashboard" className="flex items-center space-x-2.5 mb-10">
           <img src="/logo.jpg" alt="picwe Logo" className="h-10 w-10 rounded-lg" />
           <span className="text-2xl font-bold text-white">{language === "zh" ? "航海平台" : "picwe"}</span>
@@ -184,9 +212,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col ml-60">
+      <main className="flex-1 flex flex-col md:ml-60 ml-0">
         {/* Header */}
         <header className="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center sticky top-0 z-20 h-16">
+          {/* Mobile menu button */}
+          <Menu className="h-6 w-6 text-white md:hidden cursor-pointer mr-4" onClick={() => setSidebarOpen(true)} />
           <div className="text-lg font-semibold text-white">
             {navItems.find((item) => pathname.startsWith(item.href))?.name ||
               (language === "zh" ? "仪表盘" : "Dashboard")}

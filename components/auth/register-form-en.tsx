@@ -186,8 +186,8 @@ export default function RegisterFormEN() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-6">
       <div className="z-10 flex flex-col items-center text-center max-w-md w-full">
         <Link href="/" className="mb-10 flex items-center space-x-3">
-          <img src="/logo.jpg" alt="PicWe Invest Logo" className="h-12 w-12 rounded-lg" />
-          <span className="text-3xl font-bold text-yellow-500">PicWe Invest</span>
+          <img src="/logo.jpg" alt="picwe Logo" className="h-12 w-12 rounded-lg" />
+          <span className="text-3xl font-bold text-yellow-500">picwe</span>
         </Link>
 
         <div className="mb-6 p-4 rounded-lg bg-gray-800 border border-gray-700">

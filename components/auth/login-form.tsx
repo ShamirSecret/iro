@@ -289,17 +289,17 @@ export default function LoginForm() {
 
       <div className="z-10 flex flex-col items-center text-center max-w-md w-full">
         <Link href="/" className="mb-12 flex items-center space-x-3">
-          <img src="/logo.jpg" alt="PicWe Invest Logo" className="h-10 w-10 rounded-lg" />
-          <span className="text-4xl font-bold text-yellow-500">PicWe Invest</span>
+          <img src="/logo.jpg" alt="picwe Logo" className="h-10 w-10 rounded-lg" />
+          <span className="text-4xl font-bold text-yellow-500">picwe</span>
         </Link>
 
         <h1 className="text-4xl font-extrabold text-white mb-4">
-          {t("language") === "zh" ? "进入您的专属领域" : "Enter Your Exclusive Domain"}
+          {t("language") === "zh" ? "持有你的WEUSD" : "HODL YOUR WEUSD"}
         </h1>
         <p className="text-lg text-gray-300 mb-10">
           {t("language") === "zh"
-            ? "连接您的加密钱包，开启投资之旅。"
-            : "Connect your crypto wallet to start your investment journey."}
+            ? "连接你的加密钱包，开启你在加密海洋的伟大航行。"
+            : "Connect your crypto wallet to start your great voyage in the cryptosea."}
         </p>
 
         <div className="w-full space-y-6">

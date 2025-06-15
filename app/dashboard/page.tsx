@@ -42,7 +42,7 @@ export default function DashboardPage() {
       setDownlineMembers(members || [])
 
       // 生成邀请链接
-      const baseUrl = "https://picwe-invest.vercel.app"
+      const baseUrl = "https://sailing.picwe.org"
       const referralCode = currentUser.referralCode || ""
       setInviteLink(`${baseUrl}/register?code=${referralCode}`)
     }

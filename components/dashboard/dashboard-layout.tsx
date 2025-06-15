@@ -144,8 +144,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside className="w-60 bg-gray-800 p-5 border-r border-gray-700 flex flex-col fixed h-full z-10">
         <Link href="/dashboard" className="flex items-center space-x-2.5 mb-10">
-          <img src="/logo.jpg" alt="PicWe Invest Logo" className="h-10 w-10 rounded-lg" />
-          <span className="text-2xl font-bold text-white">{language === "zh" ? "航海平台" : "PicWe Invest"}</span>
+          <img src="/logo.jpg" alt="picwe Logo" className="h-10 w-10 rounded-lg" />
+          <span className="text-2xl font-bold text-white">{language === "zh" ? "航海平台" : "picwe"}</span>
         </Link>
 
         <nav className="flex-grow space-y-1.5">

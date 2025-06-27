@@ -44,6 +44,13 @@ export async function middleware(req: NextRequest) {
       if (pathname.startsWith('/api/distributors/admin-captain') && (payload as any).role !== 'admin') {
         return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
       }
+      
+      // ADMIN ROLE CHECK: 仅限管理员访问批准/拒绝/删除接口
+      if ((pathname.includes('/approve') || pathname.includes('/reject') || 
+           (pathname.match(/\/api\/distributors\/[^\/]+$/) && req.method === 'DELETE')) && 
+          (payload as any).role !== 'admin') {
+        return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+      }
       return NextResponse.next();
     } catch {
       return new NextResponse(JSON.stringify({ error: 'Invalid token' }), { status: 401 });

@@ -48,6 +48,15 @@ interface AuthContextType {
   allDistributorsData: Distributor[]
   getDownlineDetails: (distributorId: string) => Distributor[]
   refreshData: () => Promise<void>
+  approveDistributor: (id: string) => Promise<{ success: boolean; message: string }>
+  rejectDistributor: (id: string) => Promise<{ success: boolean; message: string }>
+  adminRegisterOrPromoteCaptain: (
+    name: string,
+    email: string,
+    walletAddress: string,
+    existingId?: string,
+  ) => Promise<{ success: boolean; message: string }>
+  deleteDistributor: (id: string) => Promise<{ success: boolean; message: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -393,6 +402,128 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const approveDistributor = async (id: string): Promise<{ success: boolean; message: string }> => {
+    // 检查是否为admin权限
+    if (!currentUser || currentUser.role !== "admin") {
+      return { success: false, message: "只有管理员可以批准船长申请" }
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/distributors/${id}/approve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message || "船长申请已批准" }
+      }
+      return { success: false, message: result.error || "批准失败" }
+    } catch (error) {
+      console.error("Approve distributor error:", error)
+      return { success: false, message: "批准过程中发生错误" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const rejectDistributor = async (id: string): Promise<{ success: boolean; message: string }> => {
+    // 检查是否为admin权限
+    if (!currentUser || currentUser.role !== "admin") {
+      return { success: false, message: "只有管理员可以拒绝船长申请" }
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/distributors/${id}/reject`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message || "船长申请已拒绝" }
+      }
+      return { success: false, message: result.error || "拒绝失败" }
+    } catch (error) {
+      console.error("Reject distributor error:", error)
+      return { success: false, message: "拒绝过程中发生错误" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const adminRegisterOrPromoteCaptain = async (
+    name: string,
+    email: string,
+    walletAddress: string,
+    existingId?: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    // 检查是否为admin权限
+    if (!currentUser || currentUser.role !== "admin") {
+      return { success: false, message: "只有管理员可以注册或提升船长" }
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/distributors/admin-captain", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ name, email, walletAddress, existingId }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message || "船长操作成功" }
+      }
+      return { success: false, message: result.error || "船长操作失败" }
+    } catch (error) {
+      console.error("Admin captain operation error:", error)
+      return { success: false, message: "船长操作过程中发生错误" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const deleteDistributor = async (id: string): Promise<{ success: boolean; message: string }> => {
+    // 检查是否为初始管理员权限 (只有初始管理员可以删除)
+    if (!currentUser || currentUser.role !== "admin" || currentUser.walletAddress.toLowerCase() !== ADMIN_WALLET_ADDRESS.toLowerCase()) {
+      return { success: false, message: "只有初始管理员可以删除船员记录" }
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/distributors/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message || "船员已删除" }
+      }
+      return { success: false, message: result.error || "删除失败" }
+    } catch (error) {
+      console.error("Delete distributor error:", error)
+      return { success: false, message: "删除过程中发生错误" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const getDownlineDetails = useCallback(
     (distributorId: string): Distributor[] => {
       const directDownlines = allDistributorsData.filter((d) => d.uplineDistributorId === distributorId)
@@ -424,6 +555,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         allDistributorsData,
         getDownlineDetails,
         refreshData,
+        approveDistributor,
+        rejectDistributor,
+        adminRegisterOrPromoteCaptain,
+        deleteDistributor,
       }}
     >
       {children}

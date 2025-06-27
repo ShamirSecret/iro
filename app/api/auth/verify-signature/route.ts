@@ -125,14 +125,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "您的账户申请已被拒绝。" }, { status: 403 })
     }
 
-    // Ensure admin role is correctly set if it's the admin address
+    // Ensure admin role is correctly set if it's the admin address or if user is admin in database
     if (isAdminAddress && distributor.role !== "admin") {
       distributor.role = "admin"
       distributor.roleType = "admin"
       distributor.status = "approved"
     }
 
-    // 登录通过后，生成 JWT
+    // 登录通过后，生成 JWT - 确保数据库中的admin角色被正确包含在JWT中
     const jwt = await new SignJWT({ address, id: distributor.id, role: distributor.role })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()

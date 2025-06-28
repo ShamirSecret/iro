@@ -106,7 +106,8 @@ export default function RegisterFormEN() {
         throw new Error("Unable to get wallet address, please ensure wallet is unlocked and authorized.")
       }
 
-      const address = accounts[0]
+      // 将钱包地址转换为小写，确保格式一致
+      const address = accounts[0].toLowerCase()
       setWalletAddress(address)
       setWalletError(null)
     } catch (error: any) {
@@ -154,13 +155,16 @@ export default function RegisterFormEN() {
       return
     }
 
+    // 将钱包地址转换为小写，确保数据库中地址格式一致
+    const normalizedWalletAddress = walletAddress.toLowerCase()
+
     let result
     if (isCaptainRegistration) {
       // Register captain (requires approval)
-      result = await registerCaptain(name, email, walletAddress)
+      result = await registerCaptain(name, email, normalizedWalletAddress)
     } else {
       // Register crew (no approval needed)
-      result = await registerCrew(name, email, walletAddress, uplineReferralCode)
+      result = await registerCrew(name, email, normalizedWalletAddress, uplineReferralCode)
     }
 
     if (result.success) {

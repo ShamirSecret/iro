@@ -106,7 +106,8 @@ export default function RegisterFormZH() {
         throw new Error("未能获取钱包地址，请确保钱包已解锁并授权连接。")
       }
 
-      const address = accounts[0]
+      // 将钱包地址转换为小写，确保格式一致
+      const address = accounts[0].toLowerCase()
       setWalletAddress(address)
       setWalletError(null)
     } catch (error: any) {
@@ -154,13 +155,16 @@ export default function RegisterFormZH() {
       return
     }
 
+    // 将钱包地址转换为小写，确保数据库中地址格式一致
+    const normalizedWalletAddress = walletAddress.toLowerCase()
+
     let result
     if (isCaptainRegistration) {
       // 注册船长（需要审核）
-      result = await registerCaptain(name, email, walletAddress)
+      result = await registerCaptain(name, email, normalizedWalletAddress)
     } else {
       // 注册船员（无需审核）
-      result = await registerCrew(name, email, walletAddress, uplineReferralCode)
+      result = await registerCrew(name, email, normalizedWalletAddress, uplineReferralCode)
     }
 
     if (result.success) {

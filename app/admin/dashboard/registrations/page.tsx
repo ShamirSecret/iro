@@ -97,6 +97,7 @@ export default function AdminRegistrationsPage() {
     walletAddress: "",
   })
   const [isEditingCaptain, setIsEditingCaptain] = useState(false)
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
 
   const handleApprove = async (id: string) => {
     if (!id) {
@@ -128,24 +129,30 @@ export default function AdminRegistrationsPage() {
     setCaptainForm({ ...captainForm, [e.target.name]: e.target.value })
   }
 
-  const handleCaptainFormSubmit = async (e: FormEvent) => {
+  const handleCaptainSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!captainForm.name || !captainForm.email || !captainForm.walletAddress) {
-      toast.error("请填写船长所有必填信息。")
+      setMessage({ text: "请填写所有必填字段", type: "error" })
       return
     }
+
+    // 将钱包地址转换为小写，确保数据库中地址格式一致
+    const normalizedWalletAddress = captainForm.walletAddress.toLowerCase()
+
     const result = await adminRegisterOrPromoteCaptain(
       captainForm.name,
       captainForm.email,
-      captainForm.walletAddress,
+      normalizedWalletAddress,
       isEditingCaptain ? captainForm.id : undefined,
     )
+
     if (result.success) {
-      toast.success(result.message)
-      setCaptainForm({ id: "", name: "", email: "", walletAddress: "" }) // Reset form
+      setMessage({ text: result.message || "船长操作成功", type: "success" })
+      setCaptainForm({ id: "", name: "", email: "", walletAddress: "" })
       setIsEditingCaptain(false)
+      setTimeout(() => setMessage(null), 3000)
     } else {
-      toast.error(result.message)
+      setMessage({ text: result.message || "船长操作失败", type: "error" })
     }
   }
 
@@ -196,7 +203,7 @@ export default function AdminRegistrationsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-5">
-          <form onSubmit={handleCaptainFormSubmit} className="space-y-4">
+          <form onSubmit={handleCaptainSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="captainName" className="text-xs text-picwe-lightGrayText">
@@ -270,6 +277,17 @@ export default function AdminRegistrationsPage() {
                 )}
               </Button>
             </div>
+            {message && (
+              <div
+                className={`p-3 rounded-lg border ${
+                  message.type === "success"
+                    ? "bg-green-900/20 border-green-500/50 text-green-400"
+                    : "bg-red-900/20 border-red-500/50 text-red-400"
+                }`}
+              >
+                <p className="text-sm">{message.text}</p>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>

@@ -57,6 +57,9 @@ interface AuthContextType {
     existingId?: string,
   ) => Promise<{ success: boolean; message: string }>
   deleteDistributor: (id: string) => Promise<{ success: boolean; message: string }>
+  addAdmin: (name: string, email: string, walletAddress: string) => Promise<{ success: boolean; message: string }>
+  updateAdmin: (id: string, name: string, email: string, walletAddress: string) => Promise<{ success: boolean; message: string }>
+  deleteAdmin: (id: string) => Promise<{ success: boolean; message: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -524,6 +527,95 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const addAdmin = async (name: string, email: string, walletAddress: string): Promise<{ success: boolean; message: string }> => {
+    // 检查是否为初始管理员权限 (只有初始管理员可以添加新管理员)
+    if (!currentUser || currentUser.role !== "admin" || currentUser.walletAddress.toLowerCase() !== ADMIN_WALLET_ADDRESS.toLowerCase()) {
+      return { success: false, message: "只有初始管理员可以添加新管理员" }
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/admin/admins", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ name, email, walletAddress }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message || "管理员添加成功" }
+      }
+      return { success: false, message: result.error || "添加管理员失败" }
+    } catch (error) {
+      console.error("Add admin error:", error)
+      return { success: false, message: "添加管理员过程中发生错误" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const updateAdmin = async (id: string, name: string, email: string, walletAddress: string): Promise<{ success: boolean; message: string }> => {
+    // 检查是否为初始管理员权限 (只有初始管理员可以更新管理员信息)
+    if (!currentUser || currentUser.role !== "admin" || currentUser.walletAddress.toLowerCase() !== ADMIN_WALLET_ADDRESS.toLowerCase()) {
+      return { success: false, message: "只有初始管理员可以更新管理员信息" }
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/admin/admins/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ name, email, walletAddress }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message || "管理员信息已更新" }
+      }
+      return { success: false, message: result.error || "更新管理员失败" }
+    } catch (error) {
+      console.error("Update admin error:", error)
+      return { success: false, message: "更新管理员过程中发生错误" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const deleteAdmin = async (id: string): Promise<{ success: boolean; message: string }> => {
+    // 检查是否为初始管理员权限 (只有初始管理员可以删除管理员)
+    if (!currentUser || currentUser.role !== "admin" || currentUser.walletAddress.toLowerCase() !== ADMIN_WALLET_ADDRESS.toLowerCase()) {
+      return { success: false, message: "只有初始管理员可以删除管理员" }
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/admin/admins/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message || "管理员已删除" }
+      }
+      return { success: false, message: result.error || "删除管理员失败" }
+    } catch (error) {
+      console.error("Delete admin error:", error)
+      return { success: false, message: "删除管理员过程中发生错误" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const getDownlineDetails = useCallback(
     (distributorId: string): Distributor[] => {
       const directDownlines = allDistributorsData.filter((d) => d.uplineDistributorId === distributorId)
@@ -559,6 +651,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         rejectDistributor,
         adminRegisterOrPromoteCaptain,
         deleteDistributor,
+        addAdmin,
+        updateAdmin,
+        deleteAdmin,
       }}
     >
       {children}

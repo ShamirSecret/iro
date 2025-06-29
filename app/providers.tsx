@@ -470,9 +470,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const deleteDistributor = async (id: string): Promise<{ success: boolean; message: string }> => {
-    // 检查是否为初始管理员权限 (只有初始管理员可以删除)
-    if (!currentUser || currentUser.role !== "admin" || currentUser.walletAddress.toLowerCase() !== ADMIN_WALLET_ADDRESS.toLowerCase()) {
-      return { success: false, message: "只有初始管理员可以删除船员记录" }
+    // 检查是否为管理员权限 (所有管理员都可以执行删除操作)
+    if (!currentUser || currentUser.role !== "admin") {
+      return { success: false, message: "只有管理员可以删除或停用用户" }
     }
 
     setIsLoading(true)
@@ -487,12 +487,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await response.json()
       if (response.ok) {
         await refreshData()
-        return { success: true, message: result.message || "船员已删除" }
+        return { success: true, message: result.message || "操作成功" }
       }
-      return { success: false, message: result.error || "删除失败" }
+      return { success: false, message: result.error || "操作失败" }
     } catch (error) {
       console.error("Delete distributor error:", error)
-      return { success: false, message: "删除过程中发生错误" }
+      return { success: false, message: "操作过程中发生错误" }
     } finally {
       setIsLoading(false)
     }

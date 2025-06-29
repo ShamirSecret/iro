@@ -83,7 +83,7 @@ const formatName = (name: string | null | undefined, maxLength = 10): string => 
 }
 
 export default function AdminRegistrationsPage() {
-  const { allDistributorsData, approveDistributor, rejectDistributor, adminRegisterOrPromoteCaptain, deleteDistributor, updateDistributorInfo, isLoading } =
+  const { allDistributorsData, approveDistributor, rejectDistributor, adminRegisterOrPromoteCaptain, deleteDistributor, updateDistributorInfo, isLoading, currentUser } =
     useAuth()
   const { language } = useLanguage()
   
@@ -207,11 +207,20 @@ export default function AdminRegistrationsPage() {
       toast.error(language === "zh" ? "无效的船员ID" : "Invalid crew ID")
       return
     }
+    
+    // 根据当前用户权限显示不同的确认消息
+    const isInitialAdmin = currentUser?.walletAddress?.toLowerCase() === "0x442368f7b5192f9164a11a5387194cb5718673b9"
+    const confirmMessage = isInitialAdmin 
+      ? (language === "zh" ? "确认永久删除此用户吗？此操作不可恢复。" : "Are you sure you want to permanently delete this user? This action cannot be undone.")
+      : (language === "zh" ? "确认停用此用户吗？用户状态将被设置为拒绝。" : "Are you sure you want to deactivate this user? The user status will be set to rejected.")
+    
+    if (!confirm(confirmMessage)) return
+    
     const result = await deleteDistributor(id)
     if (result.success) {
-      toast.success(language === "zh" ? "船员已删除。" : "Crew member deleted.")
+      toast.success(result.message || (language === "zh" ? "操作成功" : "Operation successful"))
     } else {
-      toast.error(result.message || (language === "zh" ? "删除失败" : "Deletion failed"))
+      toast.error(result.message || (language === "zh" ? "操作失败" : "Operation failed"))
     }
   }
 

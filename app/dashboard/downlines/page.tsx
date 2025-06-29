@@ -80,7 +80,10 @@ export default function DownlinesPage() {
                         <span className={`inline-flex items-center ${
                           d.teamSize > 0 ? "text-blue-400" : "text-gray-400"
                         }`}>
-                          {language === "zh" ? (d.title || "船员") : (d.titleEn || "Crew")}
+                          {d.teamSize > 0 
+                            ? (language === "zh" ? "船长" : "Captain")
+                            : (language === "zh" ? "船员" : "Crew")
+                          }
                         </span>
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-yellow-500 font-semibold whitespace-nowrap">
@@ -136,7 +139,10 @@ export default function DownlinesPage() {
                   <p className="text-sm text-gray-400">
                     {language === "zh" ? "头衔: " : "Title: "}
                     <span className="text-white font-medium">
-                      {language === "zh" ? (upline.title || "船员") : (upline.titleEn || "Crew")}
+                      {upline.teamSize > 0 
+                        ? (language === "zh" ? "船长" : "Captain")
+                        : (language === "zh" ? "船员" : "Crew")
+                      }
                     </span>
                   </p>
                   <p className="text-sm text-gray-400">

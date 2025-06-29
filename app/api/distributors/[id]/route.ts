@@ -30,7 +30,7 @@ export async function DELETE(
   if ((payload as any).role === "admin" && userAddr !== INITIAL_ADMIN_WALLET_ADDRESS.toLowerCase()) {
     // 标记为 rejected 视作停用
     await updateDistributorStatus(params.id, "rejected")
-    return NextResponse.json({ message: "您不是初始管理员，已将此用户标记为停用" })
+    return NextResponse.json({ message: "用户已被停用（状态改为拒绝）" })
   }
 
   const { id } = params
@@ -46,5 +46,5 @@ export async function DELETE(
   }
   // 删除分销商
   await deleteDistributor(id)
-  return NextResponse.json({ message: "Distributor deleted successfully" })
+  return NextResponse.json({ message: "用户已永久删除" })
 }

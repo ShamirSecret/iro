@@ -44,8 +44,8 @@ export default function RegisterFormEN() {
   }, [searchParams])
 
   // Determine registration type
-  const isCaptainRegistration = !uplineReferralCode.trim()
-  const isCrewRegistration = uplineReferralCode.trim().length > 0
+  const hasInvitationCode = uplineReferralCode.trim().length > 0
+  const needsApproval = !hasInvitationCode
 
   // Check if crypto wallet is installed
   const checkIfWalletInstalled = () => {
@@ -160,12 +160,12 @@ export default function RegisterFormEN() {
     const normalizedWalletAddress = walletAddress.toLowerCase()
 
     let result
-    if (isCaptainRegistration) {
-      // Register captain (requires approval)
-      result = await registerCaptain(name, email, normalizedWalletAddress)
-    } else {
-      // Register crew (no approval needed)
+    if (hasInvitationCode) {
+      // Register with invitation code (no approval needed)
       result = await registerCrew(name, email, normalizedWalletAddress, uplineReferralCode)
+    } else {
+      // Direct registration (requires approval)
+      result = await registerCaptain(name, email, normalizedWalletAddress)
     }
 
     if (result.success) {
@@ -201,31 +201,29 @@ export default function RegisterFormEN() {
         </Link>
 
         <div className="mb-6 p-4 rounded-lg bg-gray-800 border border-gray-700">
-          {isCaptainRegistration ? (
-            <div className="flex items-center justify-center space-x-2 text-blue-400">
-              <Anchor className="h-5 w-5" />
-              <span className="font-semibold">Register as Captain</span>
-            </div>
-          ) : (
+          {hasInvitationCode ? (
             <div className="flex items-center justify-center space-x-2 text-cyan-400">
               <Users className="h-5 w-5" />
-              <span className="font-semibold">Register as Crew</span>
+              <span className="font-semibold">Invitation Code Registration</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center space-x-2 text-blue-400">
+              <UserPlus className="h-5 w-5" />
+              <span className="font-semibold">Direct Registration</span>
             </div>
           )}
           <p className="text-xs text-gray-400 mt-2">
-            {isCaptainRegistration
-              ? "Captain registration requires admin approval before use"
-              : "Crew registration can be used directly after invitation code verification"}
+            {hasInvitationCode
+              ? "Register with invitation code for immediate access as crew member"
+              : "Direct registration requires admin approval before use"}
           </p>
         </div>
 
-        <h1 className="text-3xl font-bold text-white mb-3">
-          {isCaptainRegistration ? "Become a Captain" : "Become a Crew Member"}
-        </h1>
+        <h1 className="text-3xl font-bold text-white mb-3">Join picwe</h1>
         <p className="text-md text-gray-400 mb-8">
-          {isCaptainRegistration
-            ? "Fill in your information to apply to become a captain, awaiting admin approval."
-            : "Fill in your information and provide invitation code to join the team."}
+          {hasInvitationCode
+            ? "Fill in your information and provide invitation code to join the team immediately."
+            : "Fill in your information to apply for membership, awaiting admin approval."}
         </p>
 
         <form onSubmit={handleRegister} className="w-full space-y-5">
@@ -311,19 +309,19 @@ export default function RegisterFormEN() {
           <div className="space-y-1.5 text-left">
             <Label htmlFor="uplineReferralCode" className="text-sm font-medium text-gray-300">
               Invitation Code{" "}
-              {isCaptainRegistration && (
-                <span className="text-gray-500">(Optional, leave blank to register as captain)</span>
+              {needsApproval && (
+                <span className="text-gray-500">(Optional)</span>
               )}
             </Label>
             <Input
               id="uplineReferralCode"
               value={uplineReferralCode}
               onChange={(e) => setUplineReferralCode(e.target.value)}
-              required={isCrewRegistration}
+              required={false}
               className="bg-gray-800 border-gray-700 text-white placeholder-gray-500 rounded-lg py-3 focus:ring-yellow-500 focus:border-yellow-500"
               placeholder={
-                isCaptainRegistration
-                  ? "Leave blank to register as captain, fill to register as crew"
+                needsApproval
+                  ? "Enter invitation code for immediate access, otherwise requires approval"
                   : "Enter the inviter's invitation code"
               }
             />
@@ -348,12 +346,12 @@ export default function RegisterFormEN() {
           >
             {isLoading ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : isCaptainRegistration ? (
-              <Anchor className="mr-2 h-5 w-5" />
-            ) : (
+            ) : hasInvitationCode ? (
               <UserPlus className="mr-2 h-5 w-5" />
+            ) : (
+              <Users className="mr-2 h-5 w-5" />
             )}
-            {isLoading ? "Submitting..." : isCaptainRegistration ? "Apply to Become Captain" : "Join Team"}
+            {isLoading ? "Submitting..." : hasInvitationCode ? "Join Now" : "Apply to Join"}
           </Button>
         </form>
 

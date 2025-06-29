@@ -44,8 +44,8 @@ export default function RegisterFormZH() {
   }, [searchParams])
 
   // 判断注册类型
-  const isCaptainRegistration = !uplineReferralCode.trim()
-  const isCrewRegistration = uplineReferralCode.trim().length > 0
+  const hasInvitationCode = uplineReferralCode.trim().length > 0
+  const needsApproval = !hasInvitationCode
 
   // 检查是否安装了加密钱包
   const checkIfWalletInstalled = () => {
@@ -160,12 +160,12 @@ export default function RegisterFormZH() {
     const normalizedWalletAddress = walletAddress.toLowerCase()
 
     let result
-    if (isCaptainRegistration) {
-      // 注册船长（需要审核）
-      result = await registerCaptain(name, email, normalizedWalletAddress)
-    } else {
-      // 注册船员（无需审核）
+    if (hasInvitationCode) {
+      // 有邀请码注册（无需审核）
       result = await registerCrew(name, email, normalizedWalletAddress, uplineReferralCode)
+    } else {
+      // 直接注册（需要审核）
+      result = await registerCaptain(name, email, normalizedWalletAddress)
     }
 
     if (result.success) {
@@ -201,27 +201,27 @@ export default function RegisterFormZH() {
         </Link>
 
         <div className="mb-6 p-4 rounded-lg bg-gray-800 border border-gray-700">
-          {isCaptainRegistration ? (
-            <div className="flex items-center justify-center space-x-2 text-blue-400">
-              <Anchor className="h-5 w-5" />
-              <span className="font-semibold">注册船长</span>
-            </div>
-          ) : (
+          {hasInvitationCode ? (
             <div className="flex items-center justify-center space-x-2 text-cyan-400">
               <Users className="h-5 w-5" />
-              <span className="font-semibold">注册船员</span>
+              <span className="font-semibold">邀请码注册</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center space-x-2 text-blue-400">
+              <UserPlus className="h-5 w-5" />
+              <span className="font-semibold">直接注册</span>
             </div>
           )}
           <p className="text-xs text-gray-400 mt-2">
-            {isCaptainRegistration ? "船长注册需要管理员审核通过后才能使用" : "船员注册通过邀请码验证后即可直接使用"}
+            {hasInvitationCode ? "使用邀请码注册可立即使用，自动成为船员" : "直接注册需要管理员审核通过后才能使用"}
           </p>
         </div>
 
-        <h1 className="text-3xl font-bold text-white mb-3">{isCaptainRegistration ? "成为船长" : "成为船员"}</h1>
+        <h1 className="text-3xl font-bold text-white mb-3">加入 picwe</h1>
         <p className="text-md text-gray-400 mb-8">
-          {isCaptainRegistration
-            ? "填写您的信息申请成为船长，需要等待管理员审核。"
-            : "填写您的信息并提供邀请码加入团队。"}
+          {hasInvitationCode
+            ? "填写您的信息并提供邀请码即可立即加入团队。"
+            : "填写您的信息申请加入，需要等待管理员审核。"}
         </p>
 
         <form onSubmit={handleRegister} className="w-full space-y-5">
@@ -305,15 +305,15 @@ export default function RegisterFormZH() {
 
           <div className="space-y-1.5 text-left">
             <Label htmlFor="uplineReferralCode" className="text-sm font-medium text-gray-300">
-              邀请码 {isCaptainRegistration && <span className="text-gray-500">(可选，不填则注册船长)</span>}
+              邀请码 {needsApproval && <span className="text-gray-500">(可选)</span>}
             </Label>
             <Input
               id="uplineReferralCode"
               value={uplineReferralCode}
               onChange={(e) => setUplineReferralCode(e.target.value)}
-              required={isCrewRegistration}
+              required={false}
               className="bg-gray-800 border-gray-700 text-white placeholder-gray-500 rounded-lg py-3 focus:ring-yellow-500 focus:border-yellow-500"
-              placeholder={isCaptainRegistration ? "留空注册船长，填写则注册船员" : "请输入邀请人的邀请码"}
+              placeholder={needsApproval ? "填写邀请码可立即生效，否则需审核" : "请输入邀请人的邀请码"}
             />
           </div>
 
@@ -336,12 +336,12 @@ export default function RegisterFormZH() {
           >
             {isLoading ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : isCaptainRegistration ? (
-              <Anchor className="mr-2 h-5 w-5" />
-            ) : (
+            ) : hasInvitationCode ? (
               <UserPlus className="mr-2 h-5 w-5" />
+            ) : (
+              <Users className="mr-2 h-5 w-5" />
             )}
-            {isLoading ? "提交中..." : isCaptainRegistration ? "申请成为船长" : "加入团队"}
+            {isLoading ? "提交中..." : hasInvitationCode ? "立即加入" : "申请加入"}
           </Button>
         </form>
 

@@ -200,8 +200,19 @@ export async function getDistributorByReferralCode(referralCode: string): Promis
   SELECT id, distributor_id, address, wusd_balance, points_earned
   FROM referred_users WHERE distributor_id = ${dbDistributor.id}
 `
+    
+    // 根据团队规模计算头衔
+    let title = ""
+    let titleEn = ""
+    if (dbDistributor.role === "distributor") {
+      title = getTitleByTeamSize(dbDistributor.team_size, "zh")
+      titleEn = getTitleByTeamSize(dbDistributor.team_size, "en")
+    }
+    
     return {
       ...base,
+      title,
+      titleEn,
       referredUsers: dbReferredUsers.map(mapDbReferredUserToFrontend),
     } as Distributor
   } catch (error) {
@@ -240,8 +251,16 @@ export async function createCrew(name: string, email: string, walletAddress: str
     } catch (err) {
       console.error("Error inserting referred_users for crew:", err)
     }
+    
+    // 计算头衔（新注册的船员团队大小为0，所以是船员）
+    const dbDistributor = result[0]
+    const title = getTitleByTeamSize(dbDistributor.team_size, "zh")
+    const titleEn = getTitleByTeamSize(dbDistributor.team_size, "en")
+    
     return {
-      ...mapDbDistributorToFrontend(result[0]),
+      ...mapDbDistributorToFrontend(dbDistributor),
+      title,
+      titleEn,
       referredUsers: [],
     } as Distributor
   } catch (error) {
@@ -283,8 +302,16 @@ export async function createCaptain(name: string, email: string, walletAddress: 
     } catch (err) {
       console.error("Error inserting referred_users for captain:", err)
     }
+    
+    // 计算头衔（新注册的用户团队大小为0，所以是船员）
+    const dbDistributor = result[0]
+    const title = getTitleByTeamSize(dbDistributor.team_size, "zh")
+    const titleEn = getTitleByTeamSize(dbDistributor.team_size, "en")
+    
     return {
-      ...mapDbDistributorToFrontend(result[0]),
+      ...mapDbDistributorToFrontend(dbDistributor),
+      title,
+      titleEn,
       referredUsers: [],
     } as Distributor
   } catch (error) {

@@ -36,11 +36,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "钱包地址或邮箱已被注册" }, { status: 400 })
     }
 
-    // 创建船长
-    const newCaptain = await createCaptain(name, email, walletAddress)
+    // 创建新用户（需要审核）
+    const newUser = await createCaptain(name, email, walletAddress)
     return NextResponse.json({
-      message: "船长申请提交成功！请等待管理员审核。",
-      distributor: newCaptain,
+      message: "申请提交成功！请等待管理员审核。",
+      distributor: newUser,
     })
   } catch (error) {
     console.error("Captain registration error:", error)

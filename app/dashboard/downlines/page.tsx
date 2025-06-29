@@ -78,18 +78,9 @@ export default function DownlinesPage() {
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
                         <span className={`inline-flex items-center ${
-                          (d.hierarchyDepth || 0) >= 5 ? "text-blue-400" :
-                          (d.hierarchyDepth || 0) === 4 ? "text-purple-400" :
-                          (d.hierarchyDepth || 0) === 3 ? "text-indigo-400" :
-                          (d.hierarchyDepth || 0) === 2 ? "text-cyan-400" :
-                          "text-gray-400"
+                          d.teamSize > 0 ? "text-blue-400" : "text-gray-400"
                         }`}>
-                          {language === "zh" ? (d.title || "水手") : (d.titleEn || "Sailor")}
-                          {d.hierarchyDepth !== undefined && (
-                            <span className="text-xs text-gray-500 ml-1">
-                              ({d.hierarchyDepth})
-                            </span>
-                          )}
+                          {language === "zh" ? (d.title || "船员") : (d.titleEn || "Crew")}
                         </span>
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-yellow-500 font-semibold whitespace-nowrap">
@@ -145,12 +136,7 @@ export default function DownlinesPage() {
                   <p className="text-sm text-gray-400">
                     {language === "zh" ? "头衔: " : "Title: "}
                     <span className="text-white font-medium">
-                      {language === "zh" ? (upline.title || "水手") : (upline.titleEn || "Sailor")}
-                      {upline.hierarchyDepth !== undefined && (
-                        <span className="text-xs text-gray-500 ml-1">
-                          ({upline.hierarchyDepth}{language === "zh" ? "层" : " levels"})
-                        </span>
-                      )}
+                      {language === "zh" ? (upline.title || "船员") : (upline.titleEn || "Crew")}
                     </span>
                   </p>
                   <p className="text-sm text-gray-400">

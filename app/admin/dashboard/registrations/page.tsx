@@ -44,31 +44,20 @@ const StatusBadge = ({ status }: { status: Distributor["status"] }) => {
   }
 }
 
-// 更新的RoleTypeBadge组件，显示基于层级深度的头衔，支持中英双语
+// 简化的RoleTypeBadge组件，只显示船员和船长头衔，支持中英双语
 const RoleTypeBadge = ({ distributor }: { distributor: Distributor }) => {
   const { language } = useLanguage()
-  const title = language === "zh" ? (distributor.title || "水手") : (distributor.titleEn || "Sailor")
+  const title = language === "zh" ? (distributor.title || "船员") : (distributor.titleEn || "Crew")
   
-  // 根据层级深度决定图标和颜色
-  const getIconAndColor = (depth: number) => {
-    if (depth >= 5) return { icon: <Anchor className="h-3 w-3 inline mr-1" />, color: "bg-blue-500/20 text-blue-400 border-blue-500/50" }
-    if (depth === 4) return { icon: <UserCog className="h-3 w-3 inline mr-1" />, color: "bg-purple-500/20 text-purple-400 border-purple-500/50" }
-    if (depth === 3) return { icon: <UserCog className="h-3 w-3 inline mr-1" />, color: "bg-indigo-500/20 text-indigo-400 border-indigo-500/50" }
-    if (depth === 2) return { icon: <UserCog className="h-3 w-3 inline mr-1" />, color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/50" }
-    return { icon: <UserCog className="h-3 w-3 inline mr-1" />, color: "bg-gray-500/20 text-gray-400 border-gray-500/50" }
-  }
-  
-  const { icon, color } = getIconAndColor(distributor.hierarchyDepth || 0)
+  // 根据头衔决定图标和颜色
+  const iscaptain = distributor.teamSize > 0
+  const icon = iscaptain ? <Anchor className="h-3 w-3 inline mr-1" /> : <UserCog className="h-3 w-3 inline mr-1" />
+  const color = iscaptain ? "bg-blue-500/20 text-blue-400 border-blue-500/50" : "bg-gray-500/20 text-gray-400 border-gray-500/50"
   
   return (
     <Badge className={`${color} border text-xs px-2 py-0.5`}>
       {icon}
       {title}
-      {distributor.hierarchyDepth !== undefined && (
-        <span className="ml-1 text-[10px]">
-          ({distributor.hierarchyDepth}{language === "zh" ? "层" : " levels"})
-        </span>
-      )}
     </Badge>
   )
 }
@@ -426,17 +415,8 @@ export default function AdminRegistrationsPage() {
               <SelectItem value={language === "zh" ? "船长" : "Captain"} className="text-xs focus:bg-gray-700">
                 {language === "zh" ? "船长" : "Captain"}
               </SelectItem>
-              <SelectItem value={language === "zh" ? "大副" : "First Mate"} className="text-xs focus:bg-gray-700">
-                {language === "zh" ? "大副" : "First Mate"}
-              </SelectItem>
-              <SelectItem value={language === "zh" ? "二副" : "Second Mate"} className="text-xs focus:bg-gray-700">
-                {language === "zh" ? "二副" : "Second Mate"}
-              </SelectItem>
-              <SelectItem value={language === "zh" ? "三副" : "Third Mate"} className="text-xs focus:bg-gray-700">
-                {language === "zh" ? "三副" : "Third Mate"}
-              </SelectItem>
-              <SelectItem value={language === "zh" ? "水手" : "Sailor"} className="text-xs focus:bg-gray-700">
-                {language === "zh" ? "水手" : "Sailor"}
+              <SelectItem value={language === "zh" ? "船员" : "Crew"} className="text-xs focus:bg-gray-700">
+                {language === "zh" ? "船员" : "Crew"}
               </SelectItem>
             </SelectContent>
           </Select>

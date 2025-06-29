@@ -57,6 +57,7 @@ interface AuthContextType {
     existingId?: string,
   ) => Promise<{ success: boolean; message: string }>
   deleteDistributor: (id: string) => Promise<{ success: boolean; message: string }>
+  updateDistributorInfo: (id: string, name: string, email: string) => Promise<{ success: boolean; message: string }>
   addAdmin: (name: string, email: string, walletAddress: string) => Promise<{ success: boolean; message: string }>
   updateAdmin: (id: string, name: string, email: string, walletAddress: string) => Promise<{ success: boolean; message: string }>
   deleteAdmin: (id: string) => Promise<{ success: boolean; message: string }>
@@ -634,6 +635,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [allDistributorsData],
   )
 
+  const updateDistributorInfo = async (id: string, name: string, email: string): Promise<{ success: boolean; message: string }> => {
+    // 检查是否为管理员权限
+    if (!currentUser || currentUser.role !== "admin") {
+      return { success: false, message: "只有管理员可以更新分销商信息" }
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/distributors/${id}/update`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ name, email }),
+      })
+      const result = await response.json()
+      if (response.ok) {
+        await refreshData()
+        return { success: true, message: result.message || "分销商信息更新成功" }
+      }
+      return { success: false, message: result.error || "更新失败" }
+    } catch (error) {
+      console.error("Update distributor info error:", error)
+      return { success: false, message: "更新过程中发生错误" }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -651,6 +682,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         rejectDistributor,
         adminRegisterOrPromoteCaptain,
         deleteDistributor,
+        updateDistributorInfo,
         addAdmin,
         updateAdmin,
         deleteAdmin,

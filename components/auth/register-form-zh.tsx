@@ -9,6 +9,7 @@ import { useAuth } from "@/app/providers"
 import Link from "next/link"
 import { Loader2, UserPlus, Anchor, Users, Wallet } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
+import LanguageSwitcher from "@/components/language-switcher"
 
 // 声明 window.ethereum 类型
 declare global {
@@ -189,6 +190,11 @@ export default function RegisterFormZH() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-6">
       <div className="z-10 flex flex-col items-center text-center max-w-md w-full">
+        {/* 语言切换按钮 */}
+        <div className="self-end mb-4">
+          <LanguageSwitcher />
+        </div>
+        
         <Link href="/" className="mb-10 flex items-center space-x-3">
           <img src="/logo.jpg" alt="picwe Logo" className="h-12 w-12 rounded-lg" />
           <span className="text-3xl font-bold text-yellow-500">picwe</span>

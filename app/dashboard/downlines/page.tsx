@@ -51,6 +51,9 @@ export default function DownlinesPage() {
                     {language === "zh" ? "名称" : "Name"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    {language === "zh" ? "头衔" : "Title"}
+                  </TableHead>
+                  <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
                     {language === "zh" ? "总积分" : "Total Points"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -72,6 +75,22 @@ export default function DownlinesPage() {
                     <TableRow key={d.id} className="hover:bg-gray-700/30">
                       <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
                         {d.name || (language === "zh" ? "未知船员" : "Unknown Member")}
+                      </TableCell>
+                      <TableCell className="px-5 py-3 text-sm text-white whitespace-nowrap">
+                        <span className={`inline-flex items-center ${
+                          (d.hierarchyDepth || 0) >= 5 ? "text-blue-400" :
+                          (d.hierarchyDepth || 0) === 4 ? "text-purple-400" :
+                          (d.hierarchyDepth || 0) === 3 ? "text-indigo-400" :
+                          (d.hierarchyDepth || 0) === 2 ? "text-cyan-400" :
+                          "text-gray-400"
+                        }`}>
+                          {language === "zh" ? (d.title || "水手") : (d.titleEn || "Sailor")}
+                          {d.hierarchyDepth !== undefined && (
+                            <span className="text-xs text-gray-500 ml-1">
+                              ({d.hierarchyDepth})
+                            </span>
+                          )}
+                        </span>
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm text-yellow-500 font-semibold whitespace-nowrap">
                         {safeToLocaleString(d.totalPoints)}
@@ -124,19 +143,14 @@ export default function DownlinesPage() {
                     </span>
                   </p>
                   <p className="text-sm text-gray-400">
-                    {language === "zh" ? "类型: " : "Type: "}
+                    {language === "zh" ? "头衔: " : "Title: "}
                     <span className="text-white font-medium">
-                      {upline.roleType === "captain"
-                        ? language === "zh"
-                          ? "船长"
-                          : "Captain"
-                        : upline.roleType === "crew"
-                          ? language === "zh"
-                            ? "船员"
-                            : "Crew"
-                          : language === "zh"
-                            ? "未知"
-                            : "Unknown"}
+                      {language === "zh" ? (upline.title || "水手") : (upline.titleEn || "Sailor")}
+                      {upline.hierarchyDepth !== undefined && (
+                        <span className="text-xs text-gray-500 ml-1">
+                          ({upline.hierarchyDepth}{language === "zh" ? "层" : " levels"})
+                        </span>
+                      )}
                     </span>
                   </p>
                   <p className="text-sm text-gray-400">

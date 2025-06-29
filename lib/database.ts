@@ -53,6 +53,9 @@ export interface Distributor {
   commissionPoints: number
   teamSize: number
   rank?: number // Calculated dynamically
+  hierarchyDepth?: number // 层级深度
+  title?: string // 基于层级深度的头衔（中文）
+  titleEn?: string // 基于层级深度的头衔（英文）
   referredUsers: ReferredUser[]
   downlineDistributors?: Distributor[] // Populated in AuthContext or specific queries
   downline_distributor_ids?: string[] // For downlines page
@@ -121,8 +124,22 @@ export async function getAllDistributors(): Promise<Distributor[]> {
       SELECT id, distributor_id, address, wusd_balance, points_earned
       FROM referred_users WHERE distributor_id = ${dbDistributor.id}
     `
+        
+        // 计算层级深度和头衔
+        let hierarchyDepth = 0
+        let title = ""
+        let titleEn = ""
+        if (dbDistributor.role === "distributor") {
+          hierarchyDepth = await calculateDistributorHierarchyDepth(dbDistributor.id)
+          title = getTitleByHierarchyDepth(hierarchyDepth, "zh")
+          titleEn = getTitleByHierarchyDepth(hierarchyDepth, "en")
+        }
+        
         return {
           ...base,
+          hierarchyDepth,
+          title,
+          titleEn,
           referredUsers: dbReferredUsers.map(mapDbReferredUserToFrontend),
         } as Distributor
       }),
@@ -149,8 +166,22 @@ export async function getDistributorByWallet(walletAddress: string): Promise<Dis
       SELECT id, distributor_id, address, wusd_balance, points_earned
       FROM referred_users WHERE distributor_id = ${dbDistributor.id}
     `
+    
+    // 计算层级深度和头衔
+    let hierarchyDepth = 0
+    let title = ""
+    let titleEn = ""
+    if (dbDistributor.role === "distributor") {
+      hierarchyDepth = await calculateDistributorHierarchyDepth(dbDistributor.id)
+      title = getTitleByHierarchyDepth(hierarchyDepth, "zh")
+      titleEn = getTitleByHierarchyDepth(hierarchyDepth, "en")
+    }
+    
     return {
       ...base,
+      hierarchyDepth,
+      title,
+      titleEn,
       referredUsers: dbReferredUsers.map(mapDbReferredUserToFrontend),
     } as Distributor
   } catch (error) {
@@ -451,4 +482,178 @@ export function generateReferralCode(name: string): string {
   
   // 格式: ABC + 时间戳中间4位 + 4位随机数
   return `${cleanPrefix}${timestamp.toString().slice(-6, -2)}${randomSuffix}`;
+}
+
+// 根据ID获取分销商
+export async function getDistributorById(id: string): Promise<Distributor | null> {
+  try {
+    const result: DbDistributor[] = await sql`
+      SELECT 
+        id, wallet_address, name, email, role, role_type, status,
+        registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
+        referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+        team_size
+      FROM distributors WHERE id = ${id}
+    `
+    if (result.length === 0) return null
+    const dbDistributor = result[0]
+    const base = mapDbDistributorToFrontend(dbDistributor)
+    const dbReferredUsers: DbReferredUser[] = await sql`
+      SELECT id, distributor_id, address, wusd_balance, points_earned
+      FROM referred_users WHERE distributor_id = ${dbDistributor.id}
+    `
+    
+    // 计算层级深度和头衔
+    let hierarchyDepth = 0
+    let title = ""
+    let titleEn = ""
+    if (dbDistributor.role === "distributor") {
+      hierarchyDepth = await calculateDistributorHierarchyDepth(dbDistributor.id)
+      title = getTitleByHierarchyDepth(hierarchyDepth, "zh")
+      titleEn = getTitleByHierarchyDepth(hierarchyDepth, "en")
+    }
+    
+    return {
+      ...base,
+      hierarchyDepth,
+      title,
+      titleEn,
+      referredUsers: dbReferredUsers.map(mapDbReferredUserToFrontend),
+    } as Distributor
+  } catch (error) {
+    console.error("Error fetching distributor by id:", error)
+    throw new Error("Failed to fetch distributor")
+  }
+}
+
+// 删除分销商
+export async function deleteDistributor(id: string): Promise<void> {
+  try {
+    await sql`DELETE FROM distributors WHERE id = ${id}`
+  } catch (error) {
+    console.error("Error deleting distributor:", error)
+    throw new Error("Failed to delete distributor")
+  }
+}
+
+// 清除下线关系
+export async function clearUplineForDistributors(uplineId: string): Promise<void> {
+  try {
+    await sql`UPDATE distributors SET upline_distributor_id = NULL WHERE upline_distributor_id = ${uplineId}`
+  } catch (error) {
+    console.error("Error clearing upline relationships:", error)
+    throw new Error("Failed to clear upline relationships")
+  }
+}
+
+// 更新分销商信息（名称和邮箱）
+export async function updateDistributor(id: string, name: string, email: string): Promise<Distributor> {
+  try {
+    const result: DbDistributor[] = await sql`
+      UPDATE distributors 
+      SET name = ${name}, email = ${email}
+      WHERE id = ${id}
+      RETURNING 
+        id, wallet_address, name, email, role, role_type, status,
+        registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
+        referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+        team_size
+    `
+    if (result.length === 0) {
+      throw new Error("Distributor not found")
+    }
+    const dbDistributor = result[0]
+    const base = mapDbDistributorToFrontend(dbDistributor)
+    const dbReferredUsers: DbReferredUser[] = await sql`
+      SELECT id, distributor_id, address, wusd_balance, points_earned
+      FROM referred_users WHERE distributor_id = ${dbDistributor.id}
+    `
+    return {
+      ...base,
+      referredUsers: dbReferredUsers.map(mapDbReferredUserToFrontend),
+    } as Distributor
+  } catch (error) {
+    console.error("Error updating distributor:", error)
+    throw new Error("Failed to update distributor")
+  }
+}
+
+// 计算分销商的层级深度（基于下线的层级数）
+export async function calculateDistributorHierarchyDepth(distributorId: string): Promise<number> {
+  try {
+    // 使用递归CTE查询计算最大层级深度
+    const result = await sql`
+      WITH RECURSIVE hierarchy AS (
+        -- 基础情况：直接下线
+        SELECT 
+          id, 
+          upline_distributor_id,
+          1 as level
+        FROM distributors
+        WHERE upline_distributor_id = ${distributorId}
+        
+        UNION ALL
+        
+        -- 递归情况：下线的下线
+        SELECT 
+          d.id,
+          d.upline_distributor_id,
+          h.level + 1
+        FROM distributors d
+        INNER JOIN hierarchy h ON d.upline_distributor_id = h.id
+      )
+      SELECT COALESCE(MAX(level), 0) as max_depth
+      FROM hierarchy
+    `
+    
+    return result[0].max_depth
+  } catch (error) {
+    console.error("Error calculating hierarchy depth:", error)
+    return 0
+  }
+}
+
+// 根据层级深度获取头衔
+export function getTitleByHierarchyDepth(depth: number, language: "zh" | "en" = "zh"): string {
+  if (language === "en") {
+    if (depth >= 5) return "Captain"
+    if (depth === 4) return "First Mate"
+    if (depth === 3) return "Second Mate"
+    if (depth === 2) return "Third Mate"
+    return "Sailor"
+  }
+  
+  // 中文头衔
+  if (depth >= 5) return "船长"
+  if (depth === 4) return "大副"
+  if (depth === 3) return "二副"
+  if (depth === 2) return "三副"
+  return "水手"
+}
+
+// 更新所有分销商的role_type基于他们的层级深度
+export async function updateAllDistributorTitles(): Promise<void> {
+  try {
+    const distributors = await getAllDistributors()
+    
+    for (const distributor of distributors) {
+      if (distributor.role === "distributor") {
+        const depth = await calculateDistributorHierarchyDepth(distributor.id)
+        const newRoleType = depth >= 5 ? "captain" : "crew"
+        
+        // 只有当role_type需要更新时才执行更新
+        if ((depth >= 5 && distributor.roleType !== "captain") || 
+            (depth < 5 && distributor.roleType !== "crew")) {
+          await sql`
+            UPDATE distributors 
+            SET role_type = ${newRoleType}
+            WHERE id = ${distributor.id}
+          `
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error updating distributor titles:", error)
+    throw new Error("Failed to update distributor titles")
+  }
 }

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useAuth } from "@/app/providers"
+import { useAuth, useLanguage } from "@/app/providers"
 import type { Distributor } from "@/lib/database"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,49 +18,59 @@ import { Trash2 } from "lucide-react"
 
 // StatusBadge and RoleTypeBadge remain the same
 const StatusBadge = ({ status }: { status: Distributor["status"] }) => {
+  const { language } = useLanguage()
+  
   switch (status) {
     case "pending":
       return (
         <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10 text-xs px-2 py-0.5">
-          待审核
+          {language === "zh" ? "待审核" : "Pending"}
         </Badge>
       )
     case "approved":
       return (
         <Badge variant="outline" className="border-green-500/50 text-green-400 bg-green-500/10 text-xs px-2 py-0.5">
-          已批准
+          {language === "zh" ? "已批准" : "Approved"}
         </Badge>
       )
     case "rejected":
       return (
         <Badge variant="outline" className="border-red-500/50 text-red-400 bg-red-500/10 text-xs px-2 py-0.5">
-          已拒绝
+          {language === "zh" ? "已拒绝" : "Rejected"}
         </Badge>
       )
     default:
-      return <Badge className="text-xs px-2 py-0.5">未知</Badge>
+      return <Badge className="text-xs px-2 py-0.5">{language === "zh" ? "未知" : "Unknown"}</Badge>
   }
 }
 
-const RoleTypeBadge = ({ roleType }: { roleType: Distributor["roleType"] }) => {
-  switch (roleType) {
-    case "captain":
-      return (
-        <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/50 text-xs px-2 py-0.5">
-          <Anchor className="h-3 w-3 inline mr-1" />
-          船长
-        </Badge>
-      )
-    case "crew":
-      return (
-        <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 text-xs px-2 py-0.5">
-          <UserCog className="h-3 w-3 inline mr-1" />
-          船员
-        </Badge>
-      )
-    default:
-      return null
+// 更新的RoleTypeBadge组件，显示基于层级深度的头衔，支持中英双语
+const RoleTypeBadge = ({ distributor }: { distributor: Distributor }) => {
+  const { language } = useLanguage()
+  const title = language === "zh" ? (distributor.title || "水手") : (distributor.titleEn || "Sailor")
+  
+  // 根据层级深度决定图标和颜色
+  const getIconAndColor = (depth: number) => {
+    if (depth >= 5) return { icon: <Anchor className="h-3 w-3 inline mr-1" />, color: "bg-blue-500/20 text-blue-400 border-blue-500/50" }
+    if (depth === 4) return { icon: <UserCog className="h-3 w-3 inline mr-1" />, color: "bg-purple-500/20 text-purple-400 border-purple-500/50" }
+    if (depth === 3) return { icon: <UserCog className="h-3 w-3 inline mr-1" />, color: "bg-indigo-500/20 text-indigo-400 border-indigo-500/50" }
+    if (depth === 2) return { icon: <UserCog className="h-3 w-3 inline mr-1" />, color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/50" }
+    return { icon: <UserCog className="h-3 w-3 inline mr-1" />, color: "bg-gray-500/20 text-gray-400 border-gray-500/50" }
   }
+  
+  const { icon, color } = getIconAndColor(distributor.hierarchyDepth || 0)
+  
+  return (
+    <Badge className={`${color} border text-xs px-2 py-0.5`}>
+      {icon}
+      {title}
+      {distributor.hierarchyDepth !== undefined && (
+        <span className="ml-1 text-[10px]">
+          ({distributor.hierarchyDepth}{language === "zh" ? "层" : " levels"})
+        </span>
+      )}
+    </Badge>
+  )
 }
 
 // 安全的字符串截取函数
@@ -84,55 +94,68 @@ const formatName = (name: string | null | undefined, maxLength = 10): string => 
 }
 
 export default function AdminRegistrationsPage() {
-  const { allDistributorsData, approveDistributor, rejectDistributor, adminRegisterOrPromoteCaptain, deleteDistributor, isLoading } =
+  const { allDistributorsData, approveDistributor, rejectDistributor, adminRegisterOrPromoteCaptain, deleteDistributor, updateDistributorInfo, isLoading } =
     useAuth()
+  const { language } = useLanguage()
   const [filterStatus, setFilterStatus] = useState<Distributor["status"] | "all">("all")
   const [filterRoleType, setFilterRoleType] = useState<Distributor["roleType"] | "all">("all")
+  const [filterTitle, setFilterTitle] = useState<string>("all")
 
-  // State for the "Add/Promote Captain" form
+  // State for editing distributor info
+  const [editForm, setEditForm] = useState({
+    id: "",
+    name: "",
+    email: "",
+    walletAddress: "", // 只用于显示，不能修改
+  })
+  const [isEditing, setIsEditing] = useState(false)
+  
+  // State for adding new captain
   const [captainForm, setCaptainForm] = useState({
-    id: "", // For promotion
     name: "",
     email: "",
     walletAddress: "",
   })
-  const [isEditingCaptain, setIsEditingCaptain] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
 
   const handleApprove = async (id: string) => {
     if (!id) {
-      toast.error("无效的船员ID")
+      toast.error(language === "zh" ? "无效的船员ID" : "Invalid crew ID")
       return
     }
     const result = await approveDistributor(id)
     if (result.success) {
-      toast.success("船员已批准。")
+      toast.success(language === "zh" ? "船员已批准。" : "Crew member approved.")
     } else {
-      toast.error(result.message || "批准失败")
+      toast.error(result.message || (language === "zh" ? "批准失败" : "Approval failed"))
     }
   }
 
   const handleReject = async (id: string) => {
     if (!id) {
-      toast.error("无效的船员ID")
+      toast.error(language === "zh" ? "无效的船员ID" : "Invalid crew ID")
       return
     }
     const result = await rejectDistributor(id)
     if (result.success) {
-      toast.success("船员已拒绝。")
+      toast.success(language === "zh" ? "船员已拒绝。" : "Crew member rejected.")
     } else {
-      toast.error(result.message || "拒绝失败")
+      toast.error(result.message || (language === "zh" ? "拒绝失败" : "Rejection failed"))
     }
   }
 
   const handleCaptainFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCaptainForm({ ...captainForm, [e.target.name]: e.target.value })
   }
+  
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value })
+  }
 
   const handleCaptainSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!captainForm.name || !captainForm.email || !captainForm.walletAddress) {
-      setMessage({ text: "请填写所有必填字段", type: "error" })
+      setMessage({ text: language === "zh" ? "请填写所有必填字段" : "Please fill in all required fields", type: "error" })
       return
     }
 
@@ -143,46 +166,62 @@ export default function AdminRegistrationsPage() {
       captainForm.name,
       captainForm.email,
       normalizedWalletAddress,
-      isEditingCaptain ? captainForm.id : undefined,
     )
 
     if (result.success) {
-      setMessage({ text: result.message || "船长操作成功", type: "success" })
-      setCaptainForm({ id: "", name: "", email: "", walletAddress: "" })
-      setIsEditingCaptain(false)
+      setMessage({ text: result.message || (language === "zh" ? "船长注册成功" : "Captain registered successfully"), type: "success" })
+      setCaptainForm({ name: "", email: "", walletAddress: "" })
       setTimeout(() => setMessage(null), 3000)
     } else {
-      setMessage({ text: result.message || "船长操作失败", type: "error" })
+      setMessage({ text: result.message || (language === "zh" ? "船长注册失败" : "Captain registration failed"), type: "error" })
+    }
+  }
+  
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editForm.name || !editForm.email) {
+      setMessage({ text: language === "zh" ? "请填写所有必填字段" : "Please fill in all required fields", type: "error" })
+      return
+    }
+
+    const result = await updateDistributorInfo(editForm.id, editForm.name, editForm.email)
+
+    if (result.success) {
+      setMessage({ text: result.message || (language === "zh" ? "信息更新成功" : "Information updated successfully"), type: "success" })
+      setEditForm({ id: "", name: "", email: "", walletAddress: "" })
+      setIsEditing(false)
+      setTimeout(() => setMessage(null), 3000)
+    } else {
+      setMessage({ text: result.message || (language === "zh" ? "信息更新失败" : "Information update failed"), type: "error" })
     }
   }
 
-  const startPromoteToCaptain = (distributor: Distributor) => {
+  const startEditDistributor = (distributor: Distributor) => {
     if (!distributor || !distributor.id) {
-      toast.error("无效的船员数据")
+      toast.error(language === "zh" ? "无效的用户数据" : "Invalid user data")
       return
     }
-    setCaptainForm({
+    setEditForm({
       id: distributor.id,
       name: distributor.name || "",
       email: distributor.email || "",
       walletAddress: distributor.walletAddress || "",
     })
-    setIsEditingCaptain(true)
-    // Scroll to form or open modal might be good UX here
+    setIsEditing(true)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   // 删除船员处理函数
   const handleDelete = async (id: string) => {
     if (!id) {
-      toast.error("无效的船员ID")
+      toast.error(language === "zh" ? "无效的船员ID" : "Invalid crew ID")
       return
     }
     const result = await deleteDistributor(id)
     if (result.success) {
-      toast.success("船员已删除。")
+      toast.success(language === "zh" ? "船员已删除。" : "Crew member deleted.")
     } else {
-      toast.error(result.message || "删除失败")
+      toast.error(result.message || (language === "zh" ? "删除失败" : "Deletion failed"))
     }
   }
 
@@ -191,15 +230,112 @@ export default function AdminRegistrationsPage() {
     .filter((d) => d && d.role === "distributor") // 确保数据存在且是船员（分销角色）
     .filter((d) => filterStatus === "all" || d.status === filterStatus)
     .filter((d) => filterRoleType === "all" || d.roleType === filterRoleType)
+    .filter((d) => {
+      if (filterTitle === "all") return true
+      // 根据当前语言匹配头衔
+      const currentTitle = language === "zh" ? d.title : d.titleEn
+      return currentTitle === filterTitle
+    })
     .sort((a, b) => (b.registrationTimestamp || 0) - (a.registrationTimestamp || 0))
 
   return (
     <div className="space-y-6">
+      {/* 编辑用户信息表单 */}
+      {isEditing && (
+        <Card className="bg-picwe-darkGray rounded-xl shadow-xl border-gray-700/50">
+          <CardHeader className="p-5 border-b border-gray-700/50">
+            <CardTitle className="text-lg font-semibold text-white flex items-center">
+              <Edit3 className="mr-2.5 h-5 w-5 text-picwe-yellow" />
+              {language === "zh" ? "编辑用户信息" : "Edit User Information"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-5">
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="editName" className="text-xs text-picwe-lightGrayText">
+                    {language === "zh" ? "名称" : "Name"}
+                  </label>
+                  <Input
+                    id="editName"
+                    name="name"
+                    placeholder={language === "zh" ? "用户名称" : "User Name"}
+                    value={editForm.name}
+                    onChange={handleEditFormChange}
+                    className="bg-picwe-black border-gray-700 text-white text-sm rounded-md h-9 mt-1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editEmail" className="text-xs text-picwe-lightGrayText">
+                    {language === "zh" ? "邮箱" : "Email"}
+                  </label>
+                  <Input
+                    id="editEmail"
+                    name="email"
+                    type="email"
+                    placeholder={language === "zh" ? "用户邮箱" : "User Email"}
+                    value={editForm.email}
+                    onChange={handleEditFormChange}
+                    className="bg-picwe-black border-gray-700 text-white text-sm rounded-md h-9 mt-1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="editWalletAddress" className="text-xs text-picwe-lightGrayText">
+                    {language === "zh" ? "钱包地址（不可修改）" : "Wallet Address (Read-only)"}
+                  </label>
+                  <Input
+                    id="editWalletAddress"
+                    name="walletAddress"
+                    value={editForm.walletAddress}
+                    className="bg-picwe-black border-gray-700 text-gray-500 text-sm rounded-md h-9 mt-1"
+                    disabled
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3">
+                                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false)
+                      setEditForm({ id: "", name: "", email: "", walletAddress: "" })
+                    }}
+                    className="text-picwe-lightGrayText border-gray-600 hover:bg-gray-700 text-xs rounded-md h-9"
+                  >
+                    {language === "zh" ? "取消编辑" : "Cancel"}
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-picwe-yellow text-picwe-black hover:bg-yellow-400 text-xs rounded-md h-9 px-4"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (language === "zh" ? "更新信息" : "Update Info")}
+                  </Button>
+              </div>
+              {message && (
+                <div
+                  className={`p-3 rounded-lg border ${
+                    message.type === "success"
+                      ? "bg-green-900/20 border-green-500/50 text-green-400"
+                      : "bg-red-900/20 border-red-500/50 text-red-400"
+                  }`}
+                >
+                  <p className="text-sm">{message.text}</p>
+                </div>
+              )}
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 添加新船长表单 */}
       <Card className="bg-picwe-darkGray rounded-xl shadow-xl border-gray-700/50">
         <CardHeader className="p-5 border-b border-gray-700/50">
           <CardTitle className="text-lg font-semibold text-white flex items-center">
             <ShieldPlus className="mr-2.5 h-5 w-5 text-picwe-yellow" />
-            {isEditingCaptain ? "编辑/提升船长" : "指定新船长"}
+            {language === "zh" ? "指定新船长" : "Add New Captain"}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-5">
@@ -207,12 +343,12 @@ export default function AdminRegistrationsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="captainName" className="text-xs text-picwe-lightGrayText">
-                  名称
+                  {language === "zh" ? "名称" : "Name"}
                 </label>
                 <Input
                   id="captainName"
                   name="name"
-                  placeholder="船长名称"
+                  placeholder={language === "zh" ? "船长名称" : "Captain Name"}
                   value={captainForm.name}
                   onChange={handleCaptainFormChange}
                   className="bg-picwe-black border-gray-700 text-white text-sm rounded-md h-9 mt-1"
@@ -221,13 +357,13 @@ export default function AdminRegistrationsPage() {
               </div>
               <div>
                 <label htmlFor="captainEmail" className="text-xs text-picwe-lightGrayText">
-                  邮箱
+                  {language === "zh" ? "邮箱" : "Email"}
                 </label>
                 <Input
                   id="captainEmail"
                   name="email"
                   type="email"
-                  placeholder="船长邮箱"
+                  placeholder={language === "zh" ? "船长邮箱" : "Captain Email"}
                   value={captainForm.email}
                   onChange={handleCaptainFormChange}
                   className="bg-picwe-black border-gray-700 text-white text-sm rounded-md h-9 mt-1"
@@ -236,12 +372,12 @@ export default function AdminRegistrationsPage() {
               </div>
               <div>
                 <label htmlFor="captainWalletAddress" className="text-xs text-picwe-lightGrayText">
-                  钱包地址
+                  {language === "zh" ? "钱包地址" : "Wallet Address"}
                 </label>
                 <Input
                   id="captainWalletAddress"
                   name="walletAddress"
-                  placeholder="船长钱包地址"
+                  placeholder={language === "zh" ? "船长钱包地址" : "Captain Wallet Address"}
                   value={captainForm.walletAddress}
                   onChange={handleCaptainFormChange}
                   className="bg-picwe-black border-gray-700 text-white text-sm rounded-md h-9 mt-1"
@@ -250,34 +386,15 @@ export default function AdminRegistrationsPage() {
               </div>
             </div>
             <div className="flex justify-end space-x-3">
-              {isEditingCaptain && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditingCaptain(false)
-                    setCaptainForm({ id: "", name: "", email: "", walletAddress: "" })
-                  }}
-                  className="text-picwe-lightGrayText border-gray-600 hover:bg-gray-700 text-xs rounded-md h-9"
-                >
-                  取消编辑
-                </Button>
-              )}
               <Button
                 type="submit"
                 className="bg-picwe-yellow text-picwe-black hover:bg-yellow-400 text-xs rounded-md h-9 px-4"
                 disabled={isLoading}
               >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : isEditingCaptain ? (
-                  "更新船长信息"
-                ) : (
-                  "添加新船长"
-                )}
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (language === "zh" ? "添加新船长" : "Add New Captain")}
               </Button>
             </div>
-            {message && (
+            {!isEditing && message && (
               <div
                 className={`p-3 rounded-lg border ${
                   message.type === "success"
@@ -293,43 +410,71 @@ export default function AdminRegistrationsPage() {
       </Card>
 
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-        <h1 className="text-xl font-semibold text-white">船员列表</h1>
+        <h1 className="text-xl font-semibold text-white">{language === "zh" ? "船员列表" : "Crew List"}</h1>
         <div className="flex gap-3 flex-wrap">
+          <Select
+            value={filterTitle}
+            onValueChange={(value: string) => setFilterTitle(value)}
+          >
+            <SelectTrigger className="w-full md:w-[160px] bg-picwe-darkGray border-gray-700 text-picwe-lightGrayText text-xs rounded-md focus:ring-picwe-yellow h-9">
+              <SelectValue placeholder={language === "zh" ? "筛选头衔" : "Filter Title"} />
+            </SelectTrigger>
+            <SelectContent className="bg-picwe-darkGray border-gray-700 text-picwe-lightGrayText rounded-md">
+              <SelectItem value="all" className="text-xs focus:bg-gray-700">
+                {language === "zh" ? "全部头衔" : "All Titles"}
+              </SelectItem>
+              <SelectItem value={language === "zh" ? "船长" : "Captain"} className="text-xs focus:bg-gray-700">
+                {language === "zh" ? "船长" : "Captain"}
+              </SelectItem>
+              <SelectItem value={language === "zh" ? "大副" : "First Mate"} className="text-xs focus:bg-gray-700">
+                {language === "zh" ? "大副" : "First Mate"}
+              </SelectItem>
+              <SelectItem value={language === "zh" ? "二副" : "Second Mate"} className="text-xs focus:bg-gray-700">
+                {language === "zh" ? "二副" : "Second Mate"}
+              </SelectItem>
+              <SelectItem value={language === "zh" ? "三副" : "Third Mate"} className="text-xs focus:bg-gray-700">
+                {language === "zh" ? "三副" : "Third Mate"}
+              </SelectItem>
+              <SelectItem value={language === "zh" ? "水手" : "Sailor"} className="text-xs focus:bg-gray-700">
+                {language === "zh" ? "水手" : "Sailor"}
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <Select
             value={filterRoleType}
             onValueChange={(value: Distributor["roleType"] | "all") => setFilterRoleType(value)}
           >
             <SelectTrigger className="w-full md:w-[160px] bg-picwe-darkGray border-gray-700 text-picwe-lightGrayText text-xs rounded-md focus:ring-picwe-yellow h-9">
-              <SelectValue placeholder="筛选类型" />
+              <SelectValue placeholder={language === "zh" ? "筛选类型" : "Filter Type"} />
             </SelectTrigger>
             <SelectContent className="bg-picwe-darkGray border-gray-700 text-picwe-lightGrayText rounded-md">
               <SelectItem value="all" className="text-xs focus:bg-gray-700">
-                全部类型
+                {language === "zh" ? "全部类型" : "All Types"}
               </SelectItem>
               <SelectItem value="captain" className="text-xs focus:bg-gray-700">
-                船长
+                {language === "zh" ? "船长" : "Captain"}
               </SelectItem>
               <SelectItem value="crew" className="text-xs focus:bg-gray-700">
-                船员
+                {language === "zh" ? "船员" : "Crew"}
               </SelectItem>
             </SelectContent>
           </Select>
           <Select value={filterStatus} onValueChange={(value: Distributor["status"] | "all") => setFilterStatus(value)}>
             <SelectTrigger className="w-full md:w-[160px] bg-picwe-darkGray border-gray-700 text-picwe-lightGrayText text-xs rounded-md focus:ring-picwe-yellow h-9">
-              <SelectValue placeholder="筛选状态" />
+              <SelectValue placeholder={language === "zh" ? "筛选状态" : "Filter Status"} />
             </SelectTrigger>
             <SelectContent className="bg-picwe-darkGray border-gray-700 text-picwe-lightGrayText rounded-md">
               <SelectItem value="all" className="text-xs focus:bg-gray-700">
-                全部状态
+                {language === "zh" ? "全部状态" : "All Status"}
               </SelectItem>
               <SelectItem value="pending" className="text-xs focus:bg-gray-700">
-                待审核
+                {language === "zh" ? "待审核" : "Pending"}
               </SelectItem>
               <SelectItem value="approved" className="text-xs focus:bg-gray-700">
-                已批准
+                {language === "zh" ? "已批准" : "Approved"}
               </SelectItem>
               <SelectItem value="rejected" className="text-xs focus:bg-gray-700">
-                已拒绝
+                {language === "zh" ? "已拒绝" : "Rejected"}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -340,7 +485,7 @@ export default function AdminRegistrationsPage() {
         <CardHeader className="p-5 border-b border-gray-700/50">
           <CardTitle className="text-md font-semibold text-white flex items-center">
             <Users className="mr-2.5 h-5 w-5 text-picwe-yellow" />
-            船员列表 ({filteredDistributors.length})
+            {language === "zh" ? "船员列表" : "Crew List"} ({filteredDistributors.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -349,22 +494,22 @@ export default function AdminRegistrationsPage() {
               <TableHeader>
                 <TableRow className="border-b-gray-700/50">
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    名称
+                    {language === "zh" ? "名称" : "Name"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    类型
+                    {language === "zh" ? "头衔" : "Title"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    钱包
+                    {language === "zh" ? "钱包" : "Wallet"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    上级
+                    {language === "zh" ? "上级" : "Upline"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-center">
-                    状态
+                    {language === "zh" ? "状态" : "Status"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-right">
-                    操作
+                    {language === "zh" ? "操作" : "Actions"}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -381,7 +526,7 @@ export default function AdminRegistrationsPage() {
                         {distributor.name || "未知用户"}
                       </TableCell>
                       <TableCell className="px-5 py-3 text-sm whitespace-nowrap">
-                        <RoleTypeBadge roleType={distributor.roleType} />
+                        <RoleTypeBadge distributor={distributor} />
                       </TableCell>
                       <TableCell
                         className="px-5 py-3 text-xs text-picwe-lightGrayText font-mono whitespace-nowrap"
@@ -406,43 +551,31 @@ export default function AdminRegistrationsPage() {
                               size="sm"
                               className="text-green-400 hover:bg-green-500/20 hover:text-green-300 text-xs px-2 py-1 h-7"
                               onClick={() => handleApprove(distributor.id)}
-                              disabled={isLoading}
-                              title="批准"
-                            >
-                              <CheckCircle className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
-                              onClick={() => handleReject(distributor.id)}
-                              disabled={isLoading}
-                              title="拒绝"
-                            >
-                              <XCircle className="h-3.5 w-3.5" />
-                            </Button>
-                          </>
-                        )}
-                        {distributor.roleType === "crew" && distributor.status === "approved" && (
+                                                          disabled={isLoading}
+                            title={language === "zh" ? "批准" : "Approve"}
+                          >
+                            <CheckCircle className="h-3.5 w-3.5" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 text-xs px-2 py-1 h-7"
-                            onClick={() => startPromoteToCaptain(distributor)}
+                            className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
+                            onClick={() => handleReject(distributor.id)}
                             disabled={isLoading}
-                            title="提升为船长"
+                            title={language === "zh" ? "拒绝" : "Reject"}
                           >
-                            <Anchor className="h-3.5 w-3.5" />
+                            <XCircle className="h-3.5 w-3.5" />
                           </Button>
+                          </>
                         )}
-                        {distributor.roleType === "captain" && distributor.status === "approved" && (
+                        {distributor.status === "approved" && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 text-xs px-2 py-1 h-7"
-                            onClick={() => startPromoteToCaptain(distributor)}
+                            onClick={() => startEditDistributor(distributor)}
                             disabled={isLoading}
-                            title="编辑船长信息"
+                            title={language === "zh" ? "编辑信息" : "Edit Info"}
                           >
                             <Edit3 className="h-3.5 w-3.5" />
                           </Button>
@@ -454,7 +587,7 @@ export default function AdminRegistrationsPage() {
                             className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
                             onClick={() => handleDelete(distributor.id)}
                             disabled={isLoading}
-                            title="删除"
+                            title={language === "zh" ? "删除" : "Delete"}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -466,7 +599,7 @@ export default function AdminRegistrationsPage() {
                             className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
                             onClick={() => handleDelete(distributor.id)}
                             disabled={isLoading}
-                            title="删除"
+                            title={language === "zh" ? "删除" : "Delete"}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -480,7 +613,7 @@ export default function AdminRegistrationsPage() {
           ) : (
             <div className="text-center py-12">
               <Users className="h-10 w-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-picwe-lightGrayText">暂无符合条件的船员。</p>
+              <p className="text-picwe-lightGrayText">{language === "zh" ? "暂无符合条件的船员。" : "No crew members match the criteria."}</p>
             </div>
           )}
         </CardContent>

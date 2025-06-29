@@ -39,8 +39,8 @@ const appKitModal = createAppKit({
   networks,
   defaultNetwork: mainnet,
   metadata: {
-    name: 'PICWE 第三代金融信誉系统',
-    description: 'PICWE 3rd Generation Financial Credit System',
+    name: 'PICWE 3rd Gen Financial Credit System',
+    description: 'PICWE 3rd Generation Financial Credit System - Blockchain Credit Assessment Platform',
     url: typeof window !== 'undefined' ? window.location.origin : '',
     icons: ['https://your-domain.com/icon.png'],
   },

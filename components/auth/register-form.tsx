@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/app/providers"
 import Link from "next/link"
-import { Loader2, UserPlus, Zap, Anchor, Users, Wallet } from "lucide-react"
+import { Loader2, UserPlus, Zap, Wallet } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useLanguage } from "@/app/providers"
 
@@ -30,7 +30,7 @@ export default function RegisterForm() {
   const [uplineReferralCode, setUplineReferralCode] = useState("")
   const [isConnectingWallet, setIsConnectingWallet] = useState(false)
   const [walletError, setWalletError] = useState<string | null>(null)
-  const { registerCrew, registerCaptain, isLoading } = useAuth()
+  const { registerUser, isLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
@@ -44,9 +44,8 @@ export default function RegisterForm() {
     }
   }, [searchParams])
 
-  // 判断注册类型
-  const isCaptainRegistration = !uplineReferralCode.trim()
-  const isCrewRegistration = uplineReferralCode.trim().length > 0
+  // 简化：判断是否有邀请码，有邀请码则立即激活，无邀请码则需要审核
+  const hasInvitationCode = uplineReferralCode.trim().length > 0
 
   // 检查是否安装了加密钱包
   const checkIfWalletInstalled = () => {
@@ -162,14 +161,8 @@ export default function RegisterForm() {
     // 将钱包地址转换为小写，确保数据库中地址格式一致
     const normalizedWalletAddress = walletAddress.toLowerCase()
 
-    let result
-    if (isCaptainRegistration) {
-      // 注册船长（需要审核）
-      result = await registerCaptain(name, email, normalizedWalletAddress)
-    } else {
-      // 注册船员（无需审核）
-      result = await registerCrew(name, email, normalizedWalletAddress, uplineReferralCode)
-    }
+    // 简化：统一使用registerUser函数
+    const result = await registerUser(name, email, normalizedWalletAddress, uplineReferralCode || undefined)
 
     if (result.success) {
       setMessage({ text: result.message || "注册成功！", type: "success" })
@@ -198,28 +191,20 @@ export default function RegisterForm() {
           <span className="text-3xl font-bold text-picwe-yellow">PicWe</span>
         </Link>
 
+        {/* 简化注册提示信息 */}
         <div className="mb-6 p-4 rounded-lg bg-picwe-darkGray border border-gray-700">
-          {isCaptainRegistration ? (
-            <div className="flex items-center justify-center space-x-2 text-blue-400">
-              <Anchor className="h-5 w-5" />
-              <span className="font-semibold">{t("registerAsCaptain")}</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center space-x-2 text-cyan-400">
-              <Users className="h-5 w-5" />
-              <span className="font-semibold">{t("registerAsCrew")}</span>
-            </div>
-          )}
+          <div className="flex items-center justify-center space-x-2 text-cyan-400">
+            <UserPlus className="h-5 w-5" />
+            <span className="font-semibold">加入 PicWe</span>
+          </div>
           <p className="text-xs text-picwe-lightGrayText mt-2">
-            {isCaptainRegistration ? t("captainRegistrationNote") : t("crewRegistrationNote")}
+            {hasInvitationCode ? "使用邀请码注册，立即激活账户" : "直接注册，需要管理员审核"}
           </p>
         </div>
 
-        <h1 className="text-3xl font-bold text-white mb-3">
-          {isCaptainRegistration ? t("registerAsCaptain") : t("registerAsCrew")}
-        </h1>
+        <h1 className="text-3xl font-bold text-white mb-3">注册账户</h1>
         <p className="text-md text-picwe-lightGrayText mb-8">
-          {isCaptainRegistration ? t("captainRegistrationDesc") : t("crewRegistrationDesc")}
+          创建您的 PicWe 账户，开始您的旅程
         </p>
 
         <form onSubmit={handleRegister} className="w-full space-y-5">
@@ -303,16 +288,14 @@ export default function RegisterForm() {
 
           <div className="space-y-1.5 text-left">
             <Label htmlFor="uplineReferralCode" className="text-sm font-medium text-picwe-lightGrayText">
-              {t("invitationCode")}{" "}
-              {isCaptainRegistration && <span className="text-gray-500">(可选，不填则注册船长)</span>}
+              {t("invitationCode")} <span className="text-gray-500">(可选)</span>
             </Label>
             <Input
               id="uplineReferralCode"
               value={uplineReferralCode}
               onChange={(e) => setUplineReferralCode(e.target.value)}
-              required={isCrewRegistration}
               className="bg-picwe-darkGray border-gray-700 text-white placeholder-gray-500 rounded-lg py-3 focus:ring-picwe-yellow focus:border-picwe-yellow"
-              placeholder={isCaptainRegistration ? "留空注册船长，填写则注册船员" : "请输入邀请人的邀请码"}
+              placeholder="请输入邀请码（可选，有邀请码则立即激活）"
             />
           </div>
 
@@ -335,12 +318,10 @@ export default function RegisterForm() {
           >
             {isLoading ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : isCaptainRegistration ? (
-              <Anchor className="mr-2 h-5 w-5" />
             ) : (
               <UserPlus className="mr-2 h-5 w-5" />
             )}
-            {isLoading ? "提交中..." : isCaptainRegistration ? "申请成为船长" : "加入团队"}
+            {isLoading ? "提交中..." : "注册账户"}
           </Button>
         </form>
 

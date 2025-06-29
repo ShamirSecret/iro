@@ -24,8 +24,7 @@ export interface Translations {
   registrationFailed: string
 
   // Registration
-  registerAsCaptain: string
-  registerAsCrew: string
+  registerAccount: string
   fullName: string
   emailAddress: string
   walletAddress: string
@@ -33,12 +32,8 @@ export interface Translations {
   referralCode: string
   invitationCode: string
   submitRegistration: string
-  applyCaptain: string
-  joinTeam: string
-  captainRegistrationNote: string
-  crewRegistrationNote: string
-  captainRegistrationDesc: string
-  crewRegistrationDesc: string
+  registrationNote: string
+  registrationDesc: string
 
   // Placeholders
   enterName: string
@@ -111,21 +106,16 @@ const translations: Record<Language, Translations> = {
     registrationFailed: "Registration failed. Please check your information.",
 
     // Registration
-    registerAsCaptain: "Register as Captain",
-    registerAsCrew: "Register as Crew",
+    registerAccount: "Register Account",
     fullName: "Full Name",
     emailAddress: "Email Address",
     walletAddress: "Wallet Address",
     walletAddressForRewards: "Wallet Address (for receiving rewards)",
     referralCode: "Referral Code",
-    invitationCode: "Invitation Code (Optional, leave blank to register as captain)",
+    invitationCode: "Invitation Code (Optional)",
     submitRegistration: "Submit Registration",
-    applyCaptain: "Apply to Become Captain",
-    joinTeam: "Join Team",
-    captainRegistrationNote: "Captain registration requires admin approval before use",
-    crewRegistrationNote: "Crew registration can be used directly after invitation code verification",
-    captainRegistrationDesc: "Fill in your information to apply to become a captain, awaiting admin approval.",
-    crewRegistrationDesc: "Fill in your information and provide invitation code to join the team.",
+    registrationNote: "With invitation code - immediate activation, without code - requires admin approval",
+    registrationDesc: "Create your PicWe account and start your journey.",
 
     // Placeholders
     enterName: "Enter your full name",
@@ -197,21 +187,16 @@ const translations: Record<Language, Translations> = {
     registrationFailed: "注册失败，请检查您的信息。",
 
     // Registration
-    registerAsCaptain: "注册为船长",
-    registerAsCrew: "注册为船员",
+    registerAccount: "注册账户",
     fullName: "姓名",
     emailAddress: "邮箱地址",
     walletAddress: "钱包地址",
     walletAddressForRewards: "钱包地址 (用于接收奖励)",
     referralCode: "推荐码",
-    invitationCode: "邀请码 (可选，不填则注册船长)",
+    invitationCode: "邀请码 (可选)",
     submitRegistration: "提交注册",
-    applyCaptain: "申请成为船长",
-    joinTeam: "加入团队",
-    captainRegistrationNote: "船长注册需要管理员审核通过后才能使用",
-    crewRegistrationNote: "船员注册通过邀请码验证后即可直接使用",
-    captainRegistrationDesc: "填写您的信息申请成为船长，需要等待管理员审核。",
-    crewRegistrationDesc: "填写您的信息并提供邀请码加入团队。",
+    registrationNote: "有邀请码则立即激活，无邀请码则需要管理员审核",
+    registrationDesc: "创建您的 PicWe 账户，开始您的旅程。",
 
     // Placeholders
     enterName: "请输入您的姓名",

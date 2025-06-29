@@ -44,15 +44,15 @@ const StatusBadge = ({ status }: { status: Distributor["status"] }) => {
   }
 }
 
-// 简化的RoleTypeBadge组件，只显示船员和船长头衔，支持中英双语
+// 简化的RoleTypeBadge组件，直接基于roleType显示头衔
 const RoleTypeBadge = ({ distributor }: { distributor: Distributor }) => {
   const { language } = useLanguage()
-  const title = language === "zh" ? (distributor.title || "船员") : (distributor.titleEn || "Crew")
   
-  // 根据头衔决定图标和颜色
-  const iscaptain = distributor.teamSize > 0
-  const icon = iscaptain ? <Anchor className="h-3 w-3 inline mr-1" /> : <UserCog className="h-3 w-3 inline mr-1" />
-  const color = iscaptain ? "bg-blue-500/20 text-blue-400 border-blue-500/50" : "bg-gray-500/20 text-gray-400 border-gray-500/50"
+  // 直接基于roleType决定头衔，无需复杂的计算
+  const isCaptain = distributor.roleType === "captain"
+  const title = language === "zh" ? (isCaptain ? "船长" : "船员") : (isCaptain ? "Captain" : "Crew")
+  const icon = isCaptain ? <Anchor className="h-3 w-3 inline mr-1" /> : <UserCog className="h-3 w-3 inline mr-1" />
+  const color = isCaptain ? "bg-blue-500/20 text-blue-400 border-blue-500/50" : "bg-gray-500/20 text-gray-400 border-gray-500/50"
   
   return (
     <Badge className={`${color} border text-xs px-2 py-0.5`}>
@@ -86,9 +86,10 @@ export default function AdminRegistrationsPage() {
   const { allDistributorsData, approveDistributor, rejectDistributor, adminRegisterOrPromoteCaptain, deleteDistributor, updateDistributorInfo, isLoading } =
     useAuth()
   const { language } = useLanguage()
+  
+  // 简化状态管理，移除重复的filterTitle
   const [filterStatus, setFilterStatus] = useState<Distributor["status"] | "all">("all")
   const [filterRoleType, setFilterRoleType] = useState<Distributor["roleType"] | "all">("all")
-  const [filterTitle, setFilterTitle] = useState<string>("all")
 
   // State for editing distributor info
   const [editForm, setEditForm] = useState({
@@ -214,17 +215,11 @@ export default function AdminRegistrationsPage() {
     }
   }
 
-  // 安全过滤船员数据
+  // 简化过滤逻辑，移除重复的filterTitle筛选
   const filteredDistributors = (allDistributorsData || [])
     .filter((d) => d && d.role === "distributor") // 确保数据存在且是船员（分销角色）
     .filter((d) => filterStatus === "all" || d.status === filterStatus)
     .filter((d) => filterRoleType === "all" || d.roleType === filterRoleType)
-    .filter((d) => {
-      if (filterTitle === "all") return true
-      // 根据当前语言匹配头衔
-      const currentTitle = language === "zh" ? d.title : d.titleEn
-      return currentTitle === filterTitle
-    })
     .sort((a, b) => (b.registrationTimestamp || 0) - (a.registrationTimestamp || 0))
 
   return (
@@ -284,24 +279,24 @@ export default function AdminRegistrationsPage() {
                 </div>
               </div>
               <div className="flex justify-end space-x-3">
-                                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditing(false)
-                      setEditForm({ id: "", name: "", email: "", walletAddress: "" })
-                    }}
-                    className="text-picwe-lightGrayText border-gray-600 hover:bg-gray-700 text-xs rounded-md h-9"
-                  >
-                    {language === "zh" ? "取消编辑" : "Cancel"}
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="bg-picwe-yellow text-picwe-black hover:bg-yellow-400 text-xs rounded-md h-9 px-4"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (language === "zh" ? "更新信息" : "Update Info")}
-                  </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditing(false)
+                    setEditForm({ id: "", name: "", email: "", walletAddress: "" })
+                  }}
+                  className="text-picwe-lightGrayText border-gray-600 hover:bg-gray-700 text-xs rounded-md h-9"
+                >
+                  {language === "zh" ? "取消编辑" : "Cancel"}
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-picwe-yellow text-picwe-black hover:bg-yellow-400 text-xs rounded-md h-9 px-4"
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (language === "zh" ? "更新信息" : "Update Info")}
+                </Button>
               </div>
               {message && (
                 <div
@@ -400,26 +395,8 @@ export default function AdminRegistrationsPage() {
 
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <h1 className="text-xl font-semibold text-white">{language === "zh" ? "船员列表" : "Crew List"}</h1>
+        {/* 简化筛选器，移除重复的filterTitle */}
         <div className="flex gap-3 flex-wrap">
-          <Select
-            value={filterTitle}
-            onValueChange={(value: string) => setFilterTitle(value)}
-          >
-            <SelectTrigger className="w-full md:w-[160px] bg-picwe-darkGray border-gray-700 text-picwe-lightGrayText text-xs rounded-md focus:ring-picwe-yellow h-9">
-              <SelectValue placeholder={language === "zh" ? "筛选头衔" : "Filter Title"} />
-            </SelectTrigger>
-            <SelectContent className="bg-picwe-darkGray border-gray-700 text-picwe-lightGrayText rounded-md">
-              <SelectItem value="all" className="text-xs focus:bg-gray-700">
-                {language === "zh" ? "全部头衔" : "All Titles"}
-              </SelectItem>
-              <SelectItem value={language === "zh" ? "船长" : "Captain"} className="text-xs focus:bg-gray-700">
-                {language === "zh" ? "船长" : "Captain"}
-              </SelectItem>
-              <SelectItem value={language === "zh" ? "船员" : "Crew"} className="text-xs focus:bg-gray-700">
-                {language === "zh" ? "船员" : "Crew"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
           <Select
             value={filterRoleType}
             onValueChange={(value: Distributor["roleType"] | "all") => setFilterRoleType(value)}
@@ -531,21 +508,21 @@ export default function AdminRegistrationsPage() {
                               size="sm"
                               className="text-green-400 hover:bg-green-500/20 hover:text-green-300 text-xs px-2 py-1 h-7"
                               onClick={() => handleApprove(distributor.id)}
-                                                          disabled={isLoading}
-                            title={language === "zh" ? "批准" : "Approve"}
-                          >
-                            <CheckCircle className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
-                            onClick={() => handleReject(distributor.id)}
-                            disabled={isLoading}
-                            title={language === "zh" ? "拒绝" : "Reject"}
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
-                          </Button>
+                              disabled={isLoading}
+                              title={language === "zh" ? "批准" : "Approve"}
+                            >
+                              <CheckCircle className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
+                              onClick={() => handleReject(distributor.id)}
+                              disabled={isLoading}
+                              title={language === "zh" ? "拒绝" : "Reject"}
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                            </Button>
                           </>
                         )}
                         {distributor.status === "approved" && (
@@ -560,30 +537,17 @@ export default function AdminRegistrationsPage() {
                             <Edit3 className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        {distributor.roleType === "crew" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
-                            onClick={() => handleDelete(distributor.id)}
-                            disabled={isLoading}
-                            title={language === "zh" ? "删除" : "Delete"}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                        {distributor.roleType === "captain" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
-                            onClick={() => handleDelete(distributor.id)}
-                            disabled={isLoading}
-                            title={language === "zh" ? "删除" : "Delete"}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
+                        {/* 合并删除按钮逻辑，无论是crew还是captain都可以删除 */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs px-2 py-1 h-7"
+                          onClick={() => handleDelete(distributor.id)}
+                          disabled={isLoading}
+                          title={language === "zh" ? "删除" : "Delete"}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   )

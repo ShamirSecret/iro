@@ -53,8 +53,6 @@ export interface Distributor {
   commissionPoints: number
   teamSize: number
   rank?: number // Calculated dynamically
-  title?: string // 基于团队规模的头衔（中文）
-  titleEn?: string // 基于团队规模的头衔（英文）
   referredUsers: ReferredUser[]
   downlineDistributors?: Distributor[] // Populated in AuthContext or specific queries
   downline_distributor_ids?: string[] // For downlines page
@@ -107,39 +105,30 @@ function mapDbReferredUserToFrontend(dbReferredUser: DbReferredUser): ReferredUs
 
 export async function getAllDistributors(): Promise<Distributor[]> {
   try {
-    const dbDistributors: DbDistributor[] = await sql`
-  SELECT 
-    id, wallet_address, name, email, role, role_type, status,
-    registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
-    referral_code, upline_distributor_id, total_points, personal_points, commission_points,
-    team_size
-  FROM distributors
-  ORDER BY registration_timestamp DESC
-`
-    return Promise.all(
-      dbDistributors.map(async (dbDistributor) => {
-        const base = mapDbDistributorToFrontend(dbDistributor)
-        const dbReferredUsers: DbReferredUser[] = await sql`
-      SELECT id, distributor_id, address, wusd_balance, points_earned
-      FROM referred_users WHERE distributor_id = ${dbDistributor.id}
+    const dbResult: DbDistributor[] = await sql`
+      SELECT 
+        id, wallet_address, name, email, role, role_type, status,
+        registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
+        referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+        team_size
+      FROM distributors 
+      ORDER BY registration_timestamp DESC
     `
-        
-        // 根据团队规模计算头衔
-        let title = ""
-        let titleEn = ""
-        if (dbDistributor.role === "distributor") {
-          title = getTitleByTeamSize(dbDistributor.team_size, "zh")
-          titleEn = getTitleByTeamSize(dbDistributor.team_size, "en")
-        }
-        
-        return {
-          ...base,
-          title,
-          titleEn,
-          referredUsers: dbReferredUsers.map(mapDbReferredUserToFrontend),
-        } as Distributor
-      }),
-    )
+    const dbReferredUsers: DbReferredUser[] = await sql`
+      SELECT id, distributor_id, address, wusd_balance, points_earned
+      FROM referred_users
+    `
+    
+    return dbResult.map((dbDistributor) => {
+      const base = mapDbDistributorToFrontend(dbDistributor)
+      const distributorReferredUsers = dbReferredUsers.filter((ru) => ru.distributor_id === dbDistributor.id)
+      
+      // 简化：不再需要计算title和titleEn，前端直接基于roleType显示
+      return {
+        ...base,
+        referredUsers: distributorReferredUsers.map(mapDbReferredUserToFrontend),
+      } as Distributor
+    })
   } catch (error) {
     console.error("Error fetching distributors:", error)
     throw new Error("Failed to fetch distributors")
@@ -163,18 +152,9 @@ export async function getDistributorByWallet(walletAddress: string): Promise<Dis
       FROM referred_users WHERE distributor_id = ${dbDistributor.id}
     `
     
-    // 根据团队规模计算头衔
-    let title = ""
-    let titleEn = ""
-    if (dbDistributor.role === "distributor") {
-      title = getTitleByTeamSize(dbDistributor.team_size, "zh")
-      titleEn = getTitleByTeamSize(dbDistributor.team_size, "en")
-    }
-    
+    // 简化：不再需要计算title和titleEn
     return {
       ...base,
-      title,
-      titleEn,
       referredUsers: dbReferredUsers.map(mapDbReferredUserToFrontend),
     } as Distributor
   } catch (error) {
@@ -186,33 +166,24 @@ export async function getDistributorByWallet(walletAddress: string): Promise<Dis
 export async function getDistributorByReferralCode(referralCode: string): Promise<Distributor | null> {
   try {
     const result: DbDistributor[] = await sql`
-  SELECT 
-    id, wallet_address, name, email, role, role_type, status,
-    registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
-    referral_code, upline_distributor_id, total_points, personal_points, commission_points,
-    team_size
-  FROM distributors WHERE referral_code = ${referralCode}
-`
+      SELECT 
+        id, wallet_address, name, email, role, role_type, status,
+        registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
+        referral_code, upline_distributor_id, total_points, personal_points, commission_points,
+        team_size
+      FROM distributors WHERE referral_code = ${referralCode}
+    `
     if (result.length === 0) return null
     const dbDistributor = result[0]
     const base = mapDbDistributorToFrontend(dbDistributor)
     const dbReferredUsers: DbReferredUser[] = await sql`
-  SELECT id, distributor_id, address, wusd_balance, points_earned
-  FROM referred_users WHERE distributor_id = ${dbDistributor.id}
-`
+      SELECT id, distributor_id, address, wusd_balance, points_earned
+      FROM referred_users WHERE distributor_id = ${dbDistributor.id}
+    `
     
-    // 根据团队规模计算头衔
-    let title = ""
-    let titleEn = ""
-    if (dbDistributor.role === "distributor") {
-      title = getTitleByTeamSize(dbDistributor.team_size, "zh")
-      titleEn = getTitleByTeamSize(dbDistributor.team_size, "en")
-    }
-    
+    // 简化：不再需要计算title和titleEn
     return {
       ...base,
-      title,
-      titleEn,
       referredUsers: dbReferredUsers.map(mapDbReferredUserToFrontend),
     } as Distributor
   } catch (error) {
@@ -260,15 +231,11 @@ export async function createCrew(name: string, email: string, walletAddress: str
     }
     // 注意：直接注册的用户（没有邀请码）在批准时才会设置上级
     
-    // 计算头衔（新注册的用户团队大小为0，所以是船员）
+    // 简化：不再需要计算头衔，数据库触发器会自动管理roleType
     const dbDistributor = result[0]
-    const title = getTitleByTeamSize(dbDistributor.team_size, "zh")
-    const titleEn = getTitleByTeamSize(dbDistributor.team_size, "en")
     
     return {
       ...mapDbDistributorToFrontend(dbDistributor),
-      title,
-      titleEn,
       referredUsers: [],
     } as Distributor
   } catch (error) {
@@ -276,8 +243,6 @@ export async function createCrew(name: string, email: string, walletAddress: str
     throw new Error("Failed to create crew member")
   }
 }
-
-
 
 export async function updateDistributorStatus(id: string, status: "approved" | "rejected"): Promise<void> {
   try {
@@ -532,18 +497,9 @@ export async function getDistributorById(id: string): Promise<Distributor | null
       FROM referred_users WHERE distributor_id = ${dbDistributor.id}
     `
     
-    // 根据团队规模计算头衔
-    let title = ""
-    let titleEn = ""
-    if (dbDistributor.role === "distributor") {
-      title = getTitleByTeamSize(dbDistributor.team_size, "zh")
-      titleEn = getTitleByTeamSize(dbDistributor.team_size, "en")
-    }
-    
+    // 简化：不再需要计算title和titleEn
     return {
       ...base,
-      title,
-      titleEn,
       referredUsers: dbReferredUsers.map(mapDbReferredUserToFrontend),
     } as Distributor
   } catch (error) {
@@ -601,35 +557,5 @@ export async function updateDistributor(id: string, name: string, email: string)
   } catch (error) {
     console.error("Error updating distributor:", error)
     throw new Error("Failed to update distributor")
-  }
-}
-
-
-
-// 根据下线数量获取头衔（简化版：只有船员和船长）
-export function getTitleByTeamSize(teamSize: number, language: "zh" | "en" = "zh"): string {
-  if (language === "en") {
-    return teamSize > 0 ? "Captain" : "Crew"
-  }
-  
-  // 中文头衔
-  return teamSize > 0 ? "船长" : "船员"
-}
-
-// 更新所有分销商的role_type基于他们的团队规模
-export async function updateAllDistributorTitles(): Promise<void> {
-  try {
-    // 直接使用SQL更新，有下线的变成船长，没有下线的变成船员
-    await sql`
-      UPDATE distributors 
-      SET role_type = CASE 
-        WHEN team_size > 0 THEN 'captain'
-        ELSE 'crew'
-      END
-      WHERE role = 'distributor'
-    `
-  } catch (error) {
-    console.error("Error updating distributor titles:", error)
-    throw new Error("Failed to update distributor titles")
   }
 }

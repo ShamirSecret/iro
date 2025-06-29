@@ -247,7 +247,7 @@ export async function createCrew(name: string, email: string, walletAddress: str
         team_size
     `
     
-    // 如果有上级ID，将新用户作为下线插入 referred_users
+    // 只有当有上级ID时，才将新用户作为下线插入 referred_users
     if (uplineDistributorId) {
       try {
         await sql`
@@ -257,20 +257,8 @@ export async function createCrew(name: string, email: string, walletAddress: str
       } catch (err) {
         console.error("Error inserting referred_users for crew:", err)
       }
-    } else {
-      // 没有上级时，尝试将用户作为管理员的下线（如果有管理员）
-      try {
-        await sql`
-          INSERT INTO referred_users (distributor_id, address, wusd_balance, points_earned)
-          SELECT id, ${normalizedWalletAddress}, 0, 0
-          FROM distributors
-          WHERE role_type = 'admin'
-          LIMIT 1
-        `
-      } catch (err) {
-        console.error("Error inserting referred_users for direct registration:", err)
-      }
     }
+    // 注意：直接注册的用户（没有邀请码）在批准时才会设置上级
     
     // 计算头衔（新注册的用户团队大小为0，所以是船员）
     const dbDistributor = result[0]

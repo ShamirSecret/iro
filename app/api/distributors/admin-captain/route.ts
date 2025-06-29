@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createCaptain, checkExistingUser, updateDistributorStatus } from "@/lib/database"
+import { createCrew, checkExistingUser, approveDistributorWithUpline } from "@/lib/database"
 
 export async function POST(request: Request) {
   try {
@@ -21,14 +21,13 @@ export async function POST(request: Request) {
     if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email) || email.length > 50) {
       return NextResponse.json({ error: "请输入有效的邮箱地址，且长度不超过50个字符。" }, { status: 400 });
     }
-    // 如果是编辑现有船长
+    // 如果是编辑现有用户
     if (existingId) {
-      // 这里应该有更新船长信息的逻辑
-      // 由于数据库结构限制，我们这里简单处理为先批准该用户
-      await updateDistributorStatus(existingId, "approved")
+      // 批准该用户并设置上级
+      await approveDistributorWithUpline(existingId)
 
       return NextResponse.json({
-        message: `${name} 已成功更新为船长。`,
+        message: `${name} 已成功批准。`,
       })
     } else {
       // 检查用户是否已存在
@@ -37,15 +36,15 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "钱包地址或邮箱已被注册" }, { status: 400 })
       }
 
-      // 创建新船长
-      const newCaptain = await createCaptain(name, email, walletAddress)
+      // 创建新用户（直接注册，无上级）
+      const newUser = await createCrew(name, email, walletAddress)
 
-      // 直接批准该船长
-      await updateDistributorStatus(newCaptain.id, "approved")
+      // 直接批准该用户并设置上级
+      await approveDistributorWithUpline(newUser.id)
 
       return NextResponse.json({
-        message: `船长 ${name} 注册成功。`,
-        distributor: newCaptain,
+        message: `用户 ${name} 注册成功。`,
+        distributor: newUser,
       })
     }
   } catch (error) {

@@ -34,16 +34,11 @@ interface AuthContextType {
     signature: string,
   ) => Promise<{ success: boolean; message: string }>
   logout: () => void
-  registerCrew: (
+  registerUser: (
     name: string,
     email: string,
     walletAddress: string,
-    uplineReferralCode: string,
-  ) => Promise<{ success: boolean; message: string }>
-  registerCaptain: (
-    name: string,
-    email: string,
-    walletAddress: string,
+    uplineReferralCode?: string,
   ) => Promise<{ success: boolean; message: string }>
   allDistributorsData: Distributor[]
   getDownlineDetails: (distributorId: string) => Distributor[]
@@ -359,7 +354,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  const registerCrew = async (name: string, email: string, walletAddress: string, uplineReferralCode: string) => {
+  const registerUser = async (name: string, email: string, walletAddress: string, uplineReferralCode?: string) => {
     setIsLoading(true)
     try {
       const response = await fetch("/api/distributors/register-crew", {
@@ -370,36 +365,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await response.json()
       if (response.ok) {
         await refreshData()
-        return { success: true, message: result.message || "Crew registration successful! You can now log in." }
+        return { success: true, message: result.message || "Registration successful!" }
       }
       return { success: false, message: result.error || "Registration failed, please check your information." }
     } catch (error) {
       console.error("Registration error:", error)
-      return { success: false, message: "An error occurred during registration." }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const registerCaptain = async (name: string, email: string, walletAddress: string) => {
-    setIsLoading(true)
-    try {
-      const response = await fetch("/api/distributors/register-captain", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, walletAddress }),
-      })
-      const result = await response.json()
-      if (response.ok) {
-        await refreshData()
-        return {
-          success: true,
-          message: result.message || "Captain application submitted successfully! Please wait for admin approval.",
-        }
-      }
-      return { success: false, message: result.error || "Registration failed, please check your information." }
-    } catch (error) {
-      console.error("Captain registration error:", error)
       return { success: false, message: "An error occurred during registration." }
     } finally {
       setIsLoading(false)
@@ -673,8 +643,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         loginWithWallet,
         logout,
-        registerCrew,
-        registerCaptain,
+        registerUser,
         allDistributorsData,
         getDownlineDetails,
         refreshData,

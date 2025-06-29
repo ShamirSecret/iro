@@ -101,7 +101,7 @@ function mapDbReferredUserToFrontend(dbReferredUser: DbReferredUser): ReferredUs
 }
 
 // getAllDistributors, getDistributorByWallet, getDistributorByReferralCode,
-// createCrew, createCaptain, updateDistributorStatus, getDownlineDistributors, checkExistingUser
+// createCrew, updateDistributorStatus, getDownlineDistributors, checkExistingUser
 // remain largely the same as the previous version, ensuring they use the mappers.
 // For brevity, I'll only show new/modified functions related to points.
 
@@ -221,20 +221,24 @@ export async function getDistributorByReferralCode(referralCode: string): Promis
   }
 }
 
-export async function createCrew(name: string, email: string, walletAddress: string, uplineDistributorId: string): Promise<Distributor> {
+export async function createCrew(name: string, email: string, walletAddress: string, uplineDistributorId?: string): Promise<Distributor> {
   try {
     const timestamp = Date.now()
     const referralCode = generateReferralCode(name)
     // 将钱包地址转换为小写，确保数据库中地址格式一致
     const normalizedWalletAddress = walletAddress.toLowerCase()
-    // 插入新船员
+    
+    // 有上级ID表示邀请码注册（立即批准），没有上级ID表示直接注册（需要审核）
+    const status = uplineDistributorId ? 'approved' : 'pending'
+    
+    // 插入新用户
     const result: DbDistributor[] = await sql`
       INSERT INTO distributors (
         wallet_address, name, email, role, role_type, status,
         registration_timestamp, referral_code, upline_distributor_id
       ) VALUES (
-        ${normalizedWalletAddress}, ${name}, ${email}, 'distributor', 'crew', 'approved',
-        ${timestamp}, ${referralCode}, ${uplineDistributorId}
+        ${normalizedWalletAddress}, ${name}, ${email}, 'distributor', 'crew', ${status},
+        ${timestamp}, ${referralCode}, ${uplineDistributorId || null}
       )
       RETURNING 
         id, wallet_address, name, email, role, role_type, status,
@@ -242,17 +246,33 @@ export async function createCrew(name: string, email: string, walletAddress: str
         referral_code, upline_distributor_id, total_points, personal_points, commission_points,
         team_size
     `
-    // 将船员作为下线插入 referred_users
-    try {
-      await sql`
-        INSERT INTO referred_users (distributor_id, address, wusd_balance, points_earned)
-        VALUES (${uplineDistributorId}, ${normalizedWalletAddress}, 0, 0)
-      `
-    } catch (err) {
-      console.error("Error inserting referred_users for crew:", err)
+    
+    // 如果有上级ID，将新用户作为下线插入 referred_users
+    if (uplineDistributorId) {
+      try {
+        await sql`
+          INSERT INTO referred_users (distributor_id, address, wusd_balance, points_earned)
+          VALUES (${uplineDistributorId}, ${normalizedWalletAddress}, 0, 0)
+        `
+      } catch (err) {
+        console.error("Error inserting referred_users for crew:", err)
+      }
+    } else {
+      // 没有上级时，尝试将用户作为管理员的下线（如果有管理员）
+      try {
+        await sql`
+          INSERT INTO referred_users (distributor_id, address, wusd_balance, points_earned)
+          SELECT id, ${normalizedWalletAddress}, 0, 0
+          FROM distributors
+          WHERE role_type = 'admin'
+          LIMIT 1
+        `
+      } catch (err) {
+        console.error("Error inserting referred_users for direct registration:", err)
+      }
     }
     
-    // 计算头衔（新注册的船员团队大小为0，所以是船员）
+    // 计算头衔（新注册的用户团队大小为0，所以是船员）
     const dbDistributor = result[0]
     const title = getTitleByTeamSize(dbDistributor.team_size, "zh")
     const titleEn = getTitleByTeamSize(dbDistributor.team_size, "en")
@@ -269,56 +289,7 @@ export async function createCrew(name: string, email: string, walletAddress: str
   }
 }
 
-export async function createCaptain(name: string, email: string, walletAddress: string): Promise<Distributor> {
-  try {
-    const timestamp = Date.now()
-    const referralCode = generateReferralCode(name)
-    // 将钱包地址转换为小写，确保数据库中地址格式一致
-    const normalizedWalletAddress = walletAddress.toLowerCase()
-    // 插入新船长，新注册的用户都从crew开始
-    const result: DbDistributor[] = await sql`
-      INSERT INTO distributors (
-        wallet_address, name, email, role, role_type, status,
-        registration_timestamp, referral_code
-      ) VALUES (
-        ${normalizedWalletAddress}, ${name}, ${email}, 'distributor', 'crew', 'pending',
-        ${timestamp}, ${referralCode}
-      )
-      RETURNING 
-        id, wallet_address, name, email, role, role_type, status,
-        registration_timestamp, TO_CHAR(registration_date, 'YYYY-MM-DD') as registration_date,
-        referral_code, upline_distributor_id, total_points, personal_points, commission_points,
-        team_size
-    `
-    // 将船长作为初始管理员的下线插入 referred_users（如果有管理员）
-    try {
-      await sql`
-        INSERT INTO referred_users (distributor_id, address, wusd_balance, points_earned)
-        SELECT id, ${normalizedWalletAddress}, 0, 0
-        FROM distributors
-        WHERE role_type = 'admin'
-        LIMIT 1
-      `
-    } catch (err) {
-      console.error("Error inserting referred_users for captain:", err)
-    }
-    
-    // 计算头衔（新注册的用户团队大小为0，所以是船员）
-    const dbDistributor = result[0]
-    const title = getTitleByTeamSize(dbDistributor.team_size, "zh")
-    const titleEn = getTitleByTeamSize(dbDistributor.team_size, "en")
-    
-    return {
-      ...mapDbDistributorToFrontend(dbDistributor),
-      title,
-      titleEn,
-      referredUsers: [],
-    } as Distributor
-  } catch (error) {
-    console.error("Error creating captain:", error)
-    throw new Error("Failed to create captain")
-  }
-}
+
 
 export async function updateDistributorStatus(id: string, status: "approved" | "rejected"): Promise<void> {
   try {
@@ -326,6 +297,56 @@ export async function updateDistributorStatus(id: string, status: "approved" | "
   } catch (error) {
     console.error("Error updating distributor status:", error)
     throw new Error("Failed to update distributor status")
+  }
+}
+
+// 批准用户并设置上级为初始管理员（如果没有上级的话）
+export async function approveDistributorWithUpline(id: string): Promise<void> {
+  try {
+    // 获取用户信息
+    const distributor = await getDistributorById(id)
+    if (!distributor) {
+      throw new Error("Distributor not found")
+    }
+
+    // 更新状态为已批准
+    await sql`UPDATE distributors SET status = 'approved' WHERE id = ${id}`
+
+    // 如果用户没有上级，设置为初始管理员的下线
+    if (!distributor.uplineDistributorId) {
+      // 查找初始管理员
+      const adminResult = await sql`
+        SELECT id FROM distributors 
+        WHERE role_type = 'admin' 
+        ORDER BY registration_timestamp ASC 
+        LIMIT 1
+      `
+      
+      if (adminResult.length > 0) {
+        const adminId = adminResult[0].id
+        
+        // 设置上级为初始管理员
+        await sql`
+          UPDATE distributors 
+          SET upline_distributor_id = ${adminId} 
+          WHERE id = ${id}
+        `
+        
+        // 在referred_users表中添加记录
+        try {
+          await sql`
+            INSERT INTO referred_users (distributor_id, address, wusd_balance, points_earned)
+            VALUES (${adminId}, ${distributor.walletAddress}, 0, 0)
+          `
+        } catch (err) {
+          console.error("Error inserting referred_users for approved user:", err)
+          // 不抛出错误，因为主要的批准操作已经完成
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error approving distributor with upline:", error)
+    throw new Error("Failed to approve distributor")
   }
 }
 

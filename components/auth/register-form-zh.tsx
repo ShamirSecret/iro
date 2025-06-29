@@ -30,7 +30,7 @@ export default function RegisterFormZH() {
   const [uplineReferralCode, setUplineReferralCode] = useState("")
   const [isConnectingWallet, setIsConnectingWallet] = useState(false)
   const [walletError, setWalletError] = useState<string | null>(null)
-  const { registerCrew, registerCaptain, isLoading } = useAuth()
+  const { registerUser, isLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
@@ -159,14 +159,8 @@ export default function RegisterFormZH() {
     // 将钱包地址转换为小写，确保数据库中地址格式一致
     const normalizedWalletAddress = walletAddress.toLowerCase()
 
-    let result
-    if (hasInvitationCode) {
-      // 有邀请码注册（无需审核）
-      result = await registerCrew(name, email, normalizedWalletAddress, uplineReferralCode)
-    } else {
-      // 直接注册（需要审核）
-      result = await registerCaptain(name, email, normalizedWalletAddress)
-    }
+    // 统一使用registerUser函数，有邀请码立即批准，无邀请码需要审核
+    const result = await registerUser(name, email, normalizedWalletAddress, uplineReferralCode.trim() || undefined)
 
     if (result.success) {
       setMessage({ text: result.message || "注册成功！", type: "success" })

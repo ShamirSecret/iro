@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { updateDistributorStatus } from "@/lib/database"
+import { approveDistributorWithUpline } from "@/lib/database"
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -22,8 +22,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
     }
 
     console.log("Approve - User is admin, proceeding with approval for ID:", params.id)
-    await updateDistributorStatus(params.id, "approved")
-    return NextResponse.json({ message: "船员已批准" })
+    await approveDistributorWithUpline(params.id)
+    return NextResponse.json({ message: "用户已批准并设置上级" })
   } catch (error) {
     console.error("Approve error:", error)
     return NextResponse.json({ error: "批准失败" }, { status: 500 })

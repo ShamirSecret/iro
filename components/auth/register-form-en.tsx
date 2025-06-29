@@ -30,7 +30,7 @@ export default function RegisterFormEN() {
   const [uplineReferralCode, setUplineReferralCode] = useState("")
   const [isConnectingWallet, setIsConnectingWallet] = useState(false)
   const [walletError, setWalletError] = useState<string | null>(null)
-  const { registerCrew, registerCaptain, isLoading } = useAuth()
+  const { registerUser, isLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
@@ -159,14 +159,8 @@ export default function RegisterFormEN() {
     // 将钱包地址转换为小写，确保数据库中地址格式一致
     const normalizedWalletAddress = walletAddress.toLowerCase()
 
-    let result
-    if (hasInvitationCode) {
-      // Register with invitation code (no approval needed)
-      result = await registerCrew(name, email, normalizedWalletAddress, uplineReferralCode)
-    } else {
-      // Direct registration (requires approval)
-      result = await registerCaptain(name, email, normalizedWalletAddress)
-    }
+    // Use unified registerUser function, with invitation code for immediate approval, without for review
+    const result = await registerUser(name, email, normalizedWalletAddress, uplineReferralCode.trim() || undefined)
 
     if (result.success) {
       setMessage({ text: result.message || "Registration successful!", type: "success" })

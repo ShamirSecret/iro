@@ -43,7 +43,7 @@ export default function RankingPage() {
             {language === "zh" ? "排行榜" : "Leaderboard"}
           </CardTitle>
           <CardDescription className="text-sm text-gray-400 mt-1">
-            {language === "zh" ? "根据总积分对船员进行排名。" : "Members ranked by total points."}
+            {language === "zh" ? "根据总信誉对船员进行排名。" : "Members ranked by total credit."}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -59,7 +59,7 @@ export default function RankingPage() {
                       {language === "zh" ? "船员名称" : "Member Name"}
                     </TableHead>
                     <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">
-                      {language === "zh" ? "总积分" : "Total Points"}
+                      {language === "zh" ? "总信誉" : "Total Credit"}
                     </TableHead>
                   </TableRow>
                 </TableHeader>

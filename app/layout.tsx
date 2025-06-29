@@ -8,8 +8,8 @@ import { AppProviders } from "./providers"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "PicWe Invest - Real World Asset Investment Platform",
-  description: "Blockchain-based investment platform for U.S. Treasury bonds and corporate bonds",
+  title: "PICWE 3rd Gen Financial Credit System - Blockchain Credit Assessment Platform",
+  description: "Third-generation financial credit assessment system based on blockchain technology, building a decentralized credit network",
   generator: "v0.dev",
 }
 

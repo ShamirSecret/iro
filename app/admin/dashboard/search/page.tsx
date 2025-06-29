@@ -171,9 +171,9 @@ export default function DistributorSearchPage() {
                     <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
                       状态
                     </TableHead>
-                    <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-right">
-                      积分
-                    </TableHead>
+                                          <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-right">
+                        信誉
+                      </TableHead>
                     <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-right">
                       操作
                     </TableHead>

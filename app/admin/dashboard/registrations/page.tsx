@@ -468,9 +468,9 @@ export default function AdminRegistrationsPage() {
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
                     {language === "zh" ? "钱包" : "Wallet"}
                   </TableHead>
-                  <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
-                    {language === "zh" ? "上级" : "Upline"}
-                  </TableHead>
+                                        <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider">
+                        {language === "zh" ? "船长" : "Captain"}
+                      </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-picwe-lightGrayText uppercase tracking-wider text-center">
                     {language === "zh" ? "状态" : "Status"}
                   </TableHead>
@@ -481,7 +481,7 @@ export default function AdminRegistrationsPage() {
               </TableHeader>
               <TableBody className="divide-y divide-gray-700/50">
                 {filteredDistributors.map((distributor) => {
-                  // 安全获取上级信息
+                  // 安全获取船长信息
                   const upline = distributor.uplineDistributorId
                     ? allDistributorsData.find((d) => d && d.id === distributor.uplineDistributorId)
                     : null
@@ -502,7 +502,7 @@ export default function AdminRegistrationsPage() {
                       </TableCell>
                       <TableCell
                         className="px-5 py-3 text-sm text-picwe-lightGrayText whitespace-nowrap"
-                        title={upline?.email || "无上级"}
+                        title={upline?.email || "无船长"}
                       >
                         {upline ? formatName(upline.name) : "-"}
                       </TableCell>

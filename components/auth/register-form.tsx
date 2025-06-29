@@ -188,14 +188,14 @@ export default function RegisterForm() {
       <div className="z-10 flex flex-col items-center text-center max-w-md w-full">
         <Link href="/" className="mb-10 flex items-center space-x-3">
           <Zap className="h-8 w-8 text-picwe-yellow" />
-          <span className="text-3xl font-bold text-picwe-yellow">PicWe</span>
+          <span className="text-2xl font-bold text-picwe-yellow">PICWE 第三代金融信誉系统</span>
         </Link>
 
         {/* 简化注册提示信息 */}
         <div className="mb-6 p-4 rounded-lg bg-picwe-darkGray border border-gray-700">
           <div className="flex items-center justify-center space-x-2 text-cyan-400">
             <UserPlus className="h-5 w-5" />
-            <span className="font-semibold">加入 PicWe</span>
+            <span className="font-semibold">加入 PICWE 第三代金融信誉系统</span>
           </div>
           <p className="text-xs text-picwe-lightGrayText mt-2">
             {hasInvitationCode ? "使用邀请码注册，立即激活账户" : "直接注册，需要管理员审核"}
@@ -204,7 +204,7 @@ export default function RegisterForm() {
 
         <h1 className="text-3xl font-bold text-white mb-3">注册账户</h1>
         <p className="text-md text-picwe-lightGrayText mb-8">
-          创建您的 PicWe 账户，开始您的旅程
+          创建您的 PICWE 第三代金融信誉系统账户，开始您的旅程
         </p>
 
         <form onSubmit={handleRegister} className="w-full space-y-5">

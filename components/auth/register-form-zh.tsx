@@ -190,8 +190,8 @@ export default function RegisterFormZH() {
         </div>
         
         <Link href="/" className="mb-10 flex items-center space-x-3">
-          <img src="/logo.jpg" alt="picwe Logo" className="h-12 w-12 rounded-lg" />
-          <span className="text-3xl font-bold text-yellow-500">picwe</span>
+          <img src="/logo.jpg" alt="PICWE Logo" className="h-12 w-12 rounded-lg" />
+          <span className="text-2xl font-bold text-yellow-500">PICWE 第三代金融信誉系统</span>
         </Link>
 
         <div className="mb-6 p-4 rounded-lg bg-gray-800 border border-gray-700">
@@ -211,7 +211,7 @@ export default function RegisterFormZH() {
           </p>
         </div>
 
-        <h1 className="text-3xl font-bold text-white mb-3">加入 picwe</h1>
+        <h1 className="text-3xl font-bold text-white mb-3">加入 PICWE 第三代金融信誉系统</h1>
         <p className="text-md text-gray-400 mb-8">
           {hasInvitationCode
             ? "填写您的信息并提供邀请码即可立即加入团队。"

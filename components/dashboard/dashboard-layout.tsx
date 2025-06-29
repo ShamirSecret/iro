@@ -147,8 +147,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Mobile sidebar drawer */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-60 bg-gray-800 p-5 border-r border-gray-700 transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-200 md:hidden`}>
         <Link href="/dashboard" className="flex items-center space-x-2.5 mb-10">
-          <img src="/logo.jpg" alt="picwe Logo" className="h-10 w-10 rounded-lg" />
-          <span className="text-2xl font-bold text-white">{language === "zh" ? "航海平台" : "picwe"}</span>
+          <img src="/logo.jpg" alt="PICWE Logo" className="h-10 w-10 rounded-lg" />
+          <span className="text-lg font-bold text-white">{language === "zh" ? "PICWE 第三代金融信誉系统" : "PICWE 3rd Gen Financial Credit System"}</span>
         </Link>
         <nav className="flex-grow space-y-1.5">
           {navItems.map((item) => (
@@ -172,8 +172,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Sidebar (hidden on small screens) */}
       <aside className="hidden md:flex w-60 bg-gray-800 p-5 border-r border-gray-700 flex-col fixed h-full z-10">
         <Link href="/dashboard" className="flex items-center space-x-2.5 mb-10">
-          <img src="/logo.jpg" alt="picwe Logo" className="h-10 w-10 rounded-lg" />
-          <span className="text-2xl font-bold text-white">{language === "zh" ? "航海平台" : "picwe"}</span>
+          <img src="/logo.jpg" alt="PICWE Logo" className="h-10 w-10 rounded-lg" />
+          <span className="text-lg font-bold text-white">{language === "zh" ? "PICWE 第三代金融信誉系统" : "PICWE 3rd Gen Financial Credit System"}</span>
         </Link>
 
         <nav className="flex-grow space-y-1.5">

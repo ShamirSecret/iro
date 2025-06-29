@@ -190,8 +190,8 @@ export default function RegisterFormEN() {
         </div>
         
         <Link href="/" className="mb-10 flex items-center space-x-3">
-          <img src="/logo.jpg" alt="picwe Logo" className="h-12 w-12 rounded-lg" />
-          <span className="text-3xl font-bold text-yellow-500">picwe</span>
+          <img src="/logo.jpg" alt="PICWE Logo" className="h-12 w-12 rounded-lg" />
+          <span className="text-xl font-bold text-yellow-500">PICWE 3rd Gen Financial Credit System</span>
         </Link>
 
         <div className="mb-6 p-4 rounded-lg bg-gray-800 border border-gray-700">
@@ -213,7 +213,7 @@ export default function RegisterFormEN() {
           </p>
         </div>
 
-        <h1 className="text-3xl font-bold text-white mb-3">Join picwe</h1>
+        <h1 className="text-3xl font-bold text-white mb-3">Join PICWE 3rd Gen Financial Credit System</h1>
         <p className="text-md text-gray-400 mb-8">
           {hasInvitationCode
             ? "Fill in your information and provide invitation code to join the team immediately."

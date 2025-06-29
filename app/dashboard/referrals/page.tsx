@@ -30,7 +30,7 @@ export default function ReferralsPage() {
                 <TableRow className="border-gold-dark/30 hover:bg-brandBlack-lighter">
                   <TableHead className="text-gold-light">客户地址</TableHead>
                   <TableHead className="text-gold-light text-right">WUSD 余额 (模拟)</TableHead>
-                  <TableHead className="text-gold-light text-right">为您赚取的积分</TableHead>
+                  <TableHead className="text-gold-light text-right">为您赚取的信誉</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

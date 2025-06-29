@@ -289,8 +289,8 @@ export default function LoginForm() {
 
       <div className="z-10 flex flex-col items-center text-center max-w-md w-full">
         <Link href="/" className="mb-12 flex items-center space-x-3">
-          <img src="/logo.jpg" alt="picwe Logo" className="h-10 w-10 rounded-lg" />
-          <span className="text-4xl font-bold text-yellow-500">picwe</span>
+          <img src="/logo.jpg" alt="PICWE Logo" className="h-10 w-10 rounded-lg" />
+          <span className="text-2xl font-bold text-yellow-500">PICWE 第三代金融信誉系统</span>
         </Link>
 
         <h1 className="text-4xl font-extrabold text-white mb-4">

@@ -37,7 +37,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (currentUser && currentUser.id) {
-      // 获取下级成员
+      // 获取团队成员
       const members = getDownlineDetails(currentUser.id)
       setDownlineMembers(members || [])
 
@@ -130,8 +130,8 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-4 space-y-3">
               <div className="flex justify-between items-baseline">
-                <span className="text-sm text-gray-400">{language === "zh" ? "积分:" : "Points:"}</span>
-                <span className="text-lg font-bold text-yellow-500">{safeToLocaleString(userPoints)}</span>
+                              <span className="text-sm text-gray-400">{language === "zh" ? "信誉:" : "Credit:"}</span>
+              <span className="text-lg font-bold text-yellow-500">{safeToLocaleString(userPoints)}</span>
               </div>
               <div className="flex justify-between items-baseline">
                 <span className="text-sm text-gray-400">{language === "zh" ? "钱包:" : "Wallet:"}</span>
@@ -219,7 +219,7 @@ export default function DashboardPage() {
               icon={Users}
             />
             <InfoCard
-              title={language === "zh" ? "总积分" : "Total Points"}
+              title={language === "zh" ? "总信誉" : "Total Credit"}
               value={safeToLocaleString(userPoints)}
               icon={BarChartHorizontal}
               yellowValue
@@ -252,7 +252,7 @@ export default function DashboardPage() {
                               {member.name || (language === "zh" ? "未知用户" : "Unknown user")}
                             </span>
                             <span className="text-sm font-semibold text-yellow-500">
-                              {safeToLocaleString(member.totalPoints)} {language === "zh" ? "积分" : "points"}
+                              {safeToLocaleString(member.totalPoints)} {language === "zh" ? "信誉" : "credit"}
                             </span>
                           </div>
                           <div className="text-xs text-gray-400 mt-0.5">

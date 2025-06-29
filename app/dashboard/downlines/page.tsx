@@ -39,7 +39,7 @@ export default function DownlinesPage() {
         <CardHeader className="p-5 border-b border-gray-700">
           <CardTitle className="text-lg font-semibold text-white flex items-center">
             <Users className="mr-2.5 h-5 w-5 text-yellow-500" />
-            {language === "zh" ? `直接下级船员 (${downlines.length})` : `Direct Team Members (${downlines.length})`}
+            {language === "zh" ? `直接团队成员 (${downlines.length})` : `Direct Team Members (${downlines.length})`}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -54,16 +54,16 @@ export default function DownlinesPage() {
                     {language === "zh" ? "头衔" : "Title"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    {language === "zh" ? "总积分" : "Total Points"}
+                    {language === "zh" ? "总信誉" : "Total Credit"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    {language === "zh" ? "直接积分" : "Personal Points"}
+                    {language === "zh" ? "个人信誉" : "Personal Credit"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    {language === "zh" ? "佣金积分" : "Commission Points"}
+                    {language === "zh" ? "社交信誉" : "Social Credit"}
                   </TableHead>
                   <TableHead className="px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider text-center">
-                    {language === "zh" ? "下级数量" : "Team Size"}
+                    {language === "zh" ? "团队数量" : "Team Size"}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -107,7 +107,7 @@ export default function DownlinesPage() {
             <div className="text-center py-12">
               <ArrowDownCircle className="h-10 w-10 text-gray-600 mx-auto mb-3" />
               <p className="text-gray-400">
-                {language === "zh" ? "您目前还没有直接下级船员。" : "You don't have any direct team members yet."}
+                {language === "zh" ? "您目前还没有直接团队成员。" : "You don't have any direct team members yet."}
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 {language === "zh" ? "分享您的邀请码以发展船队！" : "Share your referral code to build your team!"}
@@ -122,7 +122,7 @@ export default function DownlinesPage() {
           <CardHeader className="p-5">
             <CardTitle className="text-lg font-semibold text-white flex items-center">
               <TrendingUp className="mr-2.5 h-5 w-5 text-yellow-500" />
-              {language === "zh" ? "我的上级船长" : "My Upline Captain"}
+              {language === "zh" ? "我的船长" : "My Captain"}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-5">
@@ -154,7 +154,7 @@ export default function DownlinesPage() {
                 </div>
               ) : (
                 <p className="text-gray-400">
-                  {language === "zh" ? "上级船长信息未找到。" : "Upline captain information not found."}
+                  {language === "zh" ? "船长信息未找到。" : "Captain information not found."}
                 </p>
               )
             })()}

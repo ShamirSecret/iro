@@ -57,9 +57,9 @@ export interface Translations {
 
   // Dashboard
   welcome: string
-  totalPoints: string
-  personalPoints: string
-  commissionPoints: string
+  totalCredit: string
+  personalCredit: string
+  socialCredit: string
   teamSize: string
   rank: string
 
@@ -115,7 +115,7 @@ const translations: Record<Language, Translations> = {
     invitationCode: "Invitation Code (Optional)",
     submitRegistration: "Submit Registration",
     registrationNote: "With invitation code - immediate activation, without code - requires admin approval",
-    registrationDesc: "Create your PicWe account and start your journey.",
+    registrationDesc: "Create your PICWE 3rd Gen Financial Credit System account and start your journey.",
 
     // Placeholders
     enterName: "Enter your full name",
@@ -140,9 +140,9 @@ const translations: Record<Language, Translations> = {
 
     // Dashboard
     welcome: "Welcome",
-    totalPoints: "Total Points",
-    personalPoints: "Personal Points",
-    commissionPoints: "Commission Points",
+    totalCredit: "Total Credit",
+    personalCredit: "Personal Credit",
+    socialCredit: "Social Credit",
     teamSize: "Team Size",
     rank: "Rank",
 
@@ -196,7 +196,7 @@ const translations: Record<Language, Translations> = {
     invitationCode: "邀请码 (可选)",
     submitRegistration: "提交注册",
     registrationNote: "有邀请码则立即激活，无邀请码则需要管理员审核",
-    registrationDesc: "创建您的 PicWe 账户，开始您的旅程。",
+    registrationDesc: "创建您的 PICWE 第三代金融信誉系统账户，开始您的旅程。",
 
     // Placeholders
     enterName: "请输入您的姓名",
@@ -220,9 +220,9 @@ const translations: Record<Language, Translations> = {
 
     // Dashboard
     welcome: "欢迎",
-    totalPoints: "总积分",
-    personalPoints: "个人积分",
-    commissionPoints: "佣金积分",
+    totalCredit: "总信誉",
+    personalCredit: "个人信誉",
+    socialCredit: "社交信誉",
     teamSize: "团队规模",
     rank: "排名",
 
